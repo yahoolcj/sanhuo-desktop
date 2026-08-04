@@ -80,12 +80,16 @@
     return '¥' + v.toLocaleString('zh-CN');
   }
 
-  /* 要求项:数组 ↔ 文本 */
-  function reqToText(arr) {
-    return Array.isArray(arr) ? arr.filter(Boolean).join('\n') : '';
+  /* 子需求项:对象数组 {text, done} ↔ 兼容旧字符串数组 */
+  function normReqs(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.map((r) => {
+      if (typeof r === 'string') return { text: r, done: false };
+      return { text: String(r.text || ''), done: !!r.done };
+    }).filter((r) => r.text);
   }
-  function reqToList(str) {
-    return String(str || '').split('\n').map((s) => s.trim()).filter(Boolean);
+  function reqTexts(arr) {
+    return normReqs(arr).map((r) => r.text);
   }
 
   /* ---------- 导航 ---------- */
@@ -188,8 +192,14 @@
     const datePart = fmtDue(o.date, true) || '未排期';
     const fee = money(o.fee);
     const deposit = o.deposit ? '<span class="dep">定金 ' + money(o.deposit) + '</span>' : '';
-    const reqs = Array.isArray(o.requirements) && o.requirements.length
-      ? '<div class="order-req">' + o.requirements.map((r) => '<span class="req-item">· ' + esc(r) + '</span>').join('') + '</div>'
+    const reqItems = normReqs(o.requirements);
+    const reqs = reqItems.length
+      ? '<div class="order-req">' + reqItems.map((r) =>
+          '<span class="req-item' + (r.done ? ' done' : '') + '">' +
+            (r.done ? '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<i class="req-dot"></i>') +
+            esc(r.text) +
+          '</span>'
+        ).join('') + '</div>'
       : '';
 
     if (mode === 'flow') {
@@ -243,31 +253,34 @@
   /* 下一阶段状态 */
   const NEXT_STATUS = { todo: 'pending', pending: 'collect', collect: 'done' };
 
-  /* ---------- 待办视图(状态=todo, 仅完成) ---------- */
+  /* ---------- 待办视图(状态=todo, 仅完成, 全部显示) ---------- */
   function renderTodoView() {
-    const orders = filterByMonth(data.orders.filter((o) => o.status === 'todo'));
+    const orders = data.orders.filter((o) => o.status === 'todo');
     $('#todo-head-chip').textContent = orders.length + ' 单';
+    $('#todo-desc').textContent = '未完成拍摄的商单一共有 ' + orders.length + ' 个';
     renderOrderList($('#todo-order-list'), orders, 'flow');
   }
 
-  /* ---------- 发布视图(状态=pending, 仅完成) ---------- */
+  /* ---------- 发布视图(状态=pending, 仅完成, 全部显示) ---------- */
   function renderPublishView() {
-    const orders = filterByMonth(data.orders.filter((o) => o.status === 'pending'));
+    const orders = data.orders.filter((o) => o.status === 'pending');
     $('#publish-head-chip').textContent = orders.length + ' 单';
+    $('#publish-desc').textContent = '待发布的商单一共有 ' + orders.length + ' 个';
     renderOrderList($('#publish-order-list'), orders, 'flow');
   }
 
-  /* ---------- 结余视图(状态=collect, 仅完成) ---------- */
+  /* ---------- 结余视图(状态=collect, 仅完成, 全部显示) ---------- */
   function renderBalanceView() {
-    const orders = filterByMonth(data.orders.filter((o) => o.status === 'collect'));
+    const orders = data.orders.filter((o) => o.status === 'collect');
     $('#balance-head-chip').textContent = orders.length + ' 单';
+    $('#balance-desc').textContent = '待结款的商单一共有 ' + orders.length + ' 个';
     renderOrderList($('#balance-order-list'), orders, 'flow');
 
-    /* 统计:待收总额 = 费用合计;定金已收 = 定金合计 */
-    const amount = orders.reduce((s, o) => s + (Number(o.fee) || 0), 0);
+    /* 统计:待结算金额 = 费用 - 定金;定金已收 = 定金合计 */
+    const settle = orders.reduce((s, o) => s + ((Number(o.fee) || 0) - (Number(o.deposit) || 0)), 0);
     const deposit = orders.reduce((s, o) => s + (Number(o.deposit) || 0), 0);
     $('#sb-count').textContent = orders.length;
-    $('#sb-amount').textContent = money(amount);
+    $('#sb-amount').textContent = money(settle);
     $('#sb-deposit').textContent = money(deposit);
   }
 
@@ -278,6 +291,7 @@
       : data.orders.filter((o) => o.status === mineFilter);
     const filtered = filterByMonth(byStatus);
     $('#mine-total-chip').textContent = '共 ' + data.orders.length + ' 单';
+    $('#mine-desc').textContent = '全部商单一共有 ' + data.orders.length + ' 个,点击可编辑';
     renderOrderList($('#mine-order-list'), filtered, 'full');
   }
 
@@ -312,7 +326,7 @@
 
     /* 待结款预览 */
     const collect = byStatus.collect;
-    const collectAmount = collect.reduce((s, o) => s + (Number(o.fee) || 0), 0);
+    const collectAmount = collect.reduce((s, o) => s + ((Number(o.fee) || 0) - (Number(o.deposit) || 0)), 0);
     const doneIncome = byStatus.done.reduce((s, o) => s + (Number(o.fee) || 0), 0);
     $('#home-balance-chip').textContent = collect.length + ' 单';
     $('#h-balance-amount').textContent = money(collectAmount);
@@ -378,6 +392,58 @@
   bindStatusPicker($('#f-status-picker'));
   bindStatusPicker($('#e-status-picker'));
 
+  /* ---------- 子需求编辑器(表单/详情共用) ---------- */
+  const reqEditorState = { list: [] }; /* 当前编辑的子需求数组 {text, done} */
+
+  function renderReqList(containerId) {
+    const listEl = $(containerId);
+    if (reqEditorState.list.length === 0) {
+      listEl.innerHTML = '<div class="req-empty">暂无子需求,点击下方添加</div>';
+      return;
+    }
+    listEl.innerHTML = reqEditorState.list.map((r, i) =>
+      '<div class="req-edit-item' + (r.done ? ' done' : '') + '" data-i="' + i + '">' +
+        '<button type="button" class="req-check" data-req-act="toggle" aria-label="完成">' +
+          '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</button>' +
+        '<span class="req-txt">' + esc(r.text) + '</span>' +
+        '<button type="button" class="req-del" data-req-act="del" aria-label="删除">' +
+          '<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l1 12a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 19l1-12M10 11v5.5M14 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</button>' +
+      '</div>'
+    ).join('');
+  }
+
+  function bindReqEditor(editorId, listId, inputId, addBtnId) {
+    const editor = $(editorId);
+    editor.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-req-act]');
+      if (!btn) return;
+      const item = btn.closest('.req-edit-item');
+      const i = item && Number(item.dataset.i);
+      if (i == null || !reqEditorState.list[i]) return;
+      if (btn.dataset.reqAct === 'toggle') {
+        reqEditorState.list[i].done = !reqEditorState.list[i].done;
+      } else if (btn.dataset.reqAct === 'del') {
+        reqEditorState.list.splice(i, 1);
+      }
+      renderReqList(listId);
+    });
+    const input = $(inputId);
+    const doAdd = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      reqEditorState.list.push({ text: text, done: false });
+      input.value = '';
+      renderReqList(listId);
+      input.focus();
+    };
+    $(addBtnId).addEventListener('click', doAdd);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
+  }
+  bindReqEditor($('#f-req-editor'), '#f-req-list', '#f-req-input', '#f-req-add');
+  bindReqEditor($('#e-req-editor'), '#e-req-list', '#e-req-input', '#e-req-add');
+
   function openModal(order) {
     if (order) {
       /* 编辑模式 */
@@ -387,7 +453,7 @@
       $('#f-date').value = order.date || '';
       $('#f-fee').value = order.fee != null ? order.fee : '';
       $('#f-deposit').value = order.deposit != null ? order.deposit : '';
-      $('#f-requirements').value = reqToText(order.requirements);
+      reqEditorState.list = normReqs(order.requirements);
       setStatusPicker($('#f-status-picker'), order.status || 'todo');
     } else {
       /* 新增模式 */
@@ -397,9 +463,10 @@
       $('#f-date').value = '';
       $('#f-fee').value = '';
       $('#f-deposit').value = '';
-      $('#f-requirements').value = '';
+      reqEditorState.list = [];
       setStatusPicker($('#f-status-picker'), 'todo');
     }
+    renderReqList('#f-req-list');
     modal.hidden = false;
   }
 
@@ -415,7 +482,7 @@
       date: $('#f-date').value,
       fee: Number($('#f-fee').value) || 0,
       deposit: Number($('#f-deposit').value) || 0,
-      requirements: reqToList($('#f-requirements').value),
+      requirements: reqEditorState.list.slice(),
       status: getStatusPicker($('#f-status-picker'))
     };
     if (editingOrderId) {
@@ -443,11 +510,12 @@
     $('#e-date').value = order.date || '';
     $('#e-fee').value = order.fee != null ? order.fee : '';
     $('#e-deposit').value = order.deposit != null ? order.deposit : '';
-    $('#e-req').value = reqToText(order.requirements);
+    reqEditorState.list = normReqs(order.requirements);
     setStatusPicker($('#e-status-picker'), order.status || 'todo');
     $('#d-created').textContent = order.createdAt
       ? new Date(order.createdAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       : '—';
+    renderReqList('#e-req-list');
     detailModal.hidden = false;
   }
 
@@ -460,7 +528,7 @@
     order.date = $('#e-date').value;
     order.fee = Number($('#e-fee').value) || 0;
     order.deposit = Number($('#e-deposit').value) || 0;
-    order.requirements = reqToList($('#e-req').value);
+    order.requirements = reqEditorState.list.slice();
     order.status = getStatusPicker($('#e-status-picker'));
     saveData();
     detailModal.hidden = true;
@@ -470,13 +538,27 @@
   $('#detail-close').addEventListener('click', () => { detailModal.hidden = true; });
   detailModal.addEventListener('click', (e) => { if (e.target === detailModal) detailModal.hidden = true; });
 
-  /* ---------- 删除(自定义确认) ---------- */
+  /* ---------- 确认弹窗(自定义,支持成功/删除两种样式) ---------- */
   const confirmModal = $('#confirm-modal');
+  const cfIcon = $('#cf-icon');
+  const cfOkBtn = $('#cf-ok');
   let pendingDelete = null;
 
-  function askConfirm(title, text, onOk) {
+  /* variant: 'danger'(删除,默认) | 'success'(完成) */
+  function askConfirm(title, text, onOk, variant) {
     $('#cf-title').textContent = title;
     $('#cf-text').textContent = text;
+    if (variant === 'success') {
+      cfIcon.classList.add('cf-icon-success');
+      cfIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      cfOkBtn.classList.add('btn-success');
+      cfOkBtn.textContent = '确认完成';
+    } else {
+      cfIcon.classList.remove('cf-icon-success');
+      cfIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l1 12a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 19l1-12M10 11v5.5M14 11v5.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      cfOkBtn.classList.remove('btn-success');
+      cfOkBtn.textContent = '确认删除';
+    }
     pendingDelete = { onOk: onOk };
     confirmModal.hidden = false;
   }
@@ -497,7 +579,7 @@
       data.orders = data.orders.filter((o) => o.id !== id);
       saveData();
       refreshAll();
-    });
+    }, 'danger');
   }
 
   /* 详情内删除 */
@@ -518,7 +600,7 @@
       order.status = next;
       saveData();
       refreshAll();
-    });
+    }, 'success');
   }
 
   /* 三个状态列表(flow):仅响应"完成"按钮 */

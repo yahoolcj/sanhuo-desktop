@@ -711,6 +711,83 @@ html, body {
 .btn-plain { background: var(--bg-green); color: var(--mid-green); }
 .btn-primary { background: var(--grad-green); color: #fff; }
 .btn-danger { background: var(--warn); color: #fff; }
+.btn-success { background: linear-gradient(135deg, #87C79A 0%, #579F76 100%); color: #fff; box-shadow: 0 6px 14px rgba(87, 159, 118, 0.3); }
+
+/* 页面说明文案 */
+.page-desc {
+  font-size: 12px; color: var(--gray-green);
+  background: var(--card);
+  border-radius: 14px;
+  padding: 9px 14px;
+  box-shadow: 0 2px 8px rgba(74, 112, 82, 0.05);
+  line-height: 1.6;
+}
+
+/* 成功样式确认弹窗图标 */
+.cf-icon-success {
+  background: linear-gradient(135deg, #87C79A 0%, #579F76 100%) !important;
+  box-shadow: 0 8px 20px rgba(87, 159, 118, 0.35) !important;
+}
+
+/* 子需求编辑器 */
+.req-editor { display: flex; flex-direction: column; gap: 8px; }
+.req-list { display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
+.req-empty { font-size: 11px; color: var(--gray-light); text-align: center; padding: 8px 0; }
+.req-edit-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-green);
+  border-radius: 12px;
+  padding: 7px 10px;
+}
+.req-check {
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--gray-light);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.req-check svg { width: 11px; height: 11px; opacity: 0; }
+.req-edit-item.done .req-check { border-color: var(--green-main); background: var(--green-main); }
+.req-edit-item.done .req-check svg { opacity: 1; }
+.req-txt { flex: 1; font-size: 12px; color: var(--ink-green); min-width: 0; word-break: break-all; }
+.req-edit-item.done .req-txt { color: var(--gray-light); text-decoration: line-through; }
+.req-del {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border: none; background: transparent;
+  color: var(--gray-light); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+}
+.req-del svg { width: 13px; height: 13px; }
+.req-del:active { background: var(--pink-soft); color: var(--chip-pink); }
+.req-add-row { display: flex; gap: 6px; }
+.req-add-row input {
+  flex: 1; height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-size: 12px; font-family: inherit;
+  color: var(--ink-green); outline: none;
+  min-width: 0;
+}
+.req-add-row input:focus { border-color: var(--green-main); }
+.req-add-btn {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border: none; border-radius: 12px;
+  background: var(--grad-green);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.req-add-btn svg { width: 16px; height: 16px; }
+.req-add-btn:active { transform: scale(0.92); }
+
+/* 卡片内需求项(带完成态) */
+.req-item { display: inline-flex; align-items: center; gap: 5px; line-height: 1.7; }
+.req-item svg { width: 12px; height: 12px; color: var(--green-main); flex-shrink: 0; }
+.req-item .req-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gray-light); flex-shrink: 0; }
+.req-item.done { color: var(--gray-light); text-decoration: line-through; }
 
 /* ---------- 商单详情弹窗(可编辑) ---------- */
 .detail-modal { gap: 12px; }

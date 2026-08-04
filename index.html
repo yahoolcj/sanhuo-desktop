@@ -123,16 +123,7 @@
           <h2>待办商单</h2>
           <span class="chip chip-pink" id="todo-head-chip">0 单</span>
         </div>
-        <div class="view-filter-row">
-          <span class="vf-hint">状态:待办</span>
-          <button class="mini-btn vf-add" data-goto="mine">新增商单 +</button>
-        </div>
-        <div class="month-filter" data-mf="todo">
-          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <span class="mf-label" id="mf-label-todo">2026年8月</span>
-          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="mf-all" data-mf-act="all" id="mf-all-todo">全部</button>
-        </div>
+        <p class="page-desc" id="todo-desc">未完成拍摄的商单一共有 0 个</p>
         <div class="order-list" id="todo-order-list"></div>
       </section>
 
@@ -142,16 +133,7 @@
           <h2>待发布</h2>
           <span class="chip chip-orange" id="publish-head-chip">0 单</span>
         </div>
-        <div class="view-filter-row">
-          <span class="vf-hint">状态:待发布</span>
-          <button class="mini-btn vf-add" data-goto="mine">新增商单 +</button>
-        </div>
-        <div class="month-filter" data-mf="publish">
-          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <span class="mf-label" id="mf-label-publish">2026年8月</span>
-          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="mf-all" data-mf-act="all" id="mf-all-publish">全部</button>
-        </div>
+        <p class="page-desc" id="publish-desc">待发布的商单一共有 0 个</p>
         <div class="order-list" id="publish-order-list"></div>
       </section>
 
@@ -164,7 +146,10 @@
 
         <div class="stat-card">
           <div class="stat"><b id="sb-count">0</b><span>待结款</span></div>
-          <div class="stat"><b id="sb-amount">¥0</b><span>待收总额</span></div>
+        <p class="page-desc" id="balance-desc">待结款的商单一共有 0 个</p>
+        <div class="stat-card">
+          <div class="stat"><b id="sb-count">0</b><span>待结款</span></div>
+          <div class="stat"><b id="sb-amount">¥0</b><span>待结算金额</span></div>
           <div class="stat"><b id="sb-deposit">¥0</b><span>定金已收</span></div>
         </div>
 
@@ -176,12 +161,6 @@
           </div>
         </div>
 
-        <div class="month-filter" data-mf="balance">
-          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <span class="mf-label" id="mf-label-balance">2026年8月</span>
-          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="mf-all" data-mf-act="all" id="mf-all-balance">全部</button>
-        </div>
         <div class="order-list" id="balance-order-list"></div>
       </section>
 
@@ -191,6 +170,7 @@
           <h2>我的商单</h2>
           <span class="chip chip-green" id="mine-total-chip">共 0 单</span>
         </div>
+        <p class="page-desc" id="mine-desc">全部商单一共有 0 个,点击可编辑</p>
 
         <div class="month-filter" data-mf="mine">
           <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -224,7 +204,15 @@
         <label>费用(元)<input type="number" id="f-fee" min="0" placeholder="如 3600"></label>
         <label>定金(元)<input type="number" id="f-deposit" min="0" placeholder="如 1000"></label>
       </div>
-      <label>要求项列表<textarea id="f-requirements" rows="3" placeholder="每行一项,如:&#10;产品 x12 图&#10;30s 视频"></textarea></label>
+      <label>子需求项
+        <div class="req-editor" id="f-req-editor">
+          <div class="req-list" id="f-req-list"></div>
+          <div class="req-add-row">
+            <input type="text" id="f-req-input" placeholder="添加子需求,如:产品 x12 图" maxlength="40">
+            <button type="button" class="req-add-btn" id="f-req-add" aria-label="添加"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+      </label>
       <label>状态
         <div class="status-picker" id="f-status-picker">
           <button type="button" class="sp-item sp-todo" data-status="todo">待办</button>
@@ -253,7 +241,15 @@
         <label>费用(元)<input type="number" id="e-fee" min="0"></label>
         <label>定金(元)<input type="number" id="e-deposit" min="0"></label>
       </div>
-      <label>要求项列表<textarea id="e-req" rows="3" placeholder="每行一项"></textarea></label>
+      <label>子需求项
+        <div class="req-editor" id="e-req-editor">
+          <div class="req-list" id="e-req-list"></div>
+          <div class="req-add-row">
+            <input type="text" id="e-req-input" placeholder="添加子需求,如:产品 x12 图" maxlength="40">
+            <button type="button" class="req-add-btn" id="e-req-add" aria-label="添加"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+      </label>
       <label>状态
         <div class="status-picker" id="e-status-picker">
           <button type="button" class="sp-item sp-todo" data-status="todo">待办</button>
@@ -277,10 +273,10 @@
     </div>
   </div>
 
-  <!-- 删除确认弹窗(标准提示样式) -->
+  <!-- 确认弹窗(删除/完成共用,JS 切换样式) -->
   <div class="modal-mask" id="confirm-modal" hidden>
     <div class="modal confirm-modal">
-      <div class="cf-icon">
+      <div class="cf-icon" id="cf-icon">
         <svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l1 12a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 19l1-12M10 11v5.5M14 11v5.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <h3 class="cf-title" id="cf-title">确认删除</h3>
