@@ -28,6 +28,13 @@
           </span>
           <span>待办</span>
         </button>
+        <button class="nav-item" data-view="publish">
+          <span class="nav-icon-wrap">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5v5M8 5.5l4-2 4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9h14l-1.5 11h-11L5 9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 14.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="badge" id="badge-publish">0</span>
+          </span>
+          <span>发布</span>
+        </button>
         <button class="nav-item" data-view="balance">
           <span class="nav-icon-wrap">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="5.5" width="18" height="14" rx="3.5" stroke="currentColor" stroke-width="2"/><path d="M3 10.5h18" stroke="currentColor" stroke-width="2"/><circle cx="16.5" cy="14.5" r="1.6" fill="currentColor"/></svg>
@@ -68,7 +75,7 @@
           <button class="stat stat-btn" data-goto="todo">
             <b id="ov-todo">0</b><span class="st-label st-todo">待办</span>
           </button>
-          <button class="stat stat-btn" data-goto="mine" data-status="pending">
+          <button class="stat stat-btn" data-goto="publish">
             <b id="ov-pending">0</b><span class="st-label st-pending">待发布</span>
           </button>
           <button class="stat stat-btn" data-goto="balance">
@@ -121,6 +128,19 @@
           <button class="mini-btn vf-add" data-goto="mine">新增商单 +</button>
         </div>
         <div class="order-list" id="todo-order-list"></div>
+      </section>
+
+      <!-- 发布:状态=待发布 的商单 -->
+      <section class="view" id="view-publish">
+        <div class="page-head">
+          <h2>待发布</h2>
+          <span class="chip chip-orange" id="publish-head-chip">0 单</span>
+        </div>
+        <div class="view-filter-row">
+          <span class="vf-hint">状态:待发布</span>
+          <button class="mini-btn vf-add" data-goto="mine">新增商单 +</button>
+        </div>
+        <div class="order-list" id="publish-order-list"></div>
       </section>
 
       <!-- 结余:状态=待结款 的商单 -->

@@ -89,7 +89,7 @@
   }
 
   /* ---------- 导航 ---------- */
-  const views = ['home', 'todo', 'balance', 'mine'];
+  const views = ['home', 'todo', 'publish', 'balance', 'mine'];
   let mineFilter = 'all'; /* 我的页状态筛选 */
 
   function switchView(name) {
@@ -101,6 +101,7 @@
     });
     if (name === 'mine' && mineFilter === 'all') renderMine();
     if (name === 'todo') renderTodoView();
+    if (name === 'publish') renderPublishView();
     if (name === 'balance') renderBalanceView();
   }
 
@@ -176,6 +177,13 @@
     const orders = data.orders.filter((o) => o.status === 'todo');
     $('#todo-head-chip').textContent = orders.length + ' 单';
     renderOrderList($('#todo-order-list'), orders);
+  }
+
+  /* ---------- 发布视图(状态=pending) ---------- */
+  function renderPublishView() {
+    const orders = data.orders.filter((o) => o.status === 'pending');
+    $('#publish-head-chip').textContent = orders.length + ' 单';
+    renderOrderList($('#publish-order-list'), orders);
   }
 
   /* ---------- 结余视图(状态=collect) ---------- */
@@ -264,10 +272,13 @@
   /* ---------- 菜单徽标 ---------- */
   function renderBadges() {
     const todoCount = data.orders.filter((o) => o.status === 'todo').length;
+    const publishCount = data.orders.filter((o) => o.status === 'pending').length;
     const collectCount = data.orders.filter((o) => o.status === 'collect').length;
 
     $('#badge-todo').textContent = todoCount;
     $('#badge-todo').style.display = todoCount > 0 ? 'flex' : 'none';
+    $('#badge-publish').textContent = publishCount;
+    $('#badge-publish').style.display = publishCount > 0 ? 'flex' : 'none';
     $('#badge-balance').textContent = collectCount;
     $('#badge-balance').style.display = collectCount > 0 ? 'flex' : 'none';
   }
@@ -424,8 +435,8 @@
     deleteOrder(id);
   });
 
-  /* 三个列表的点击委托:删除 / 打开详情 */
-  ['#todo-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => {
+  /* 四个列表的点击委托:删除 / 打开详情 */
+  ['#todo-order-list', '#publish-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => {
     const listEl = $(sel);
     listEl.addEventListener('click', (e) => {
       if (e.target.closest('[data-act="del-order"]')) {
@@ -543,6 +554,7 @@
     renderGreet();
     renderHomePreview();
     renderTodoView();
+    renderPublishView();
     renderBalanceView();
     renderMine();
     renderReminder();
@@ -551,7 +563,7 @@
 
   /* ---------- 初始化 ---------- */
   function init() {
-    ['#todo-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => initSwipe($(sel)));
+    ['#todo-order-list', '#publish-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => initSwipe($(sel)));
     refreshAll();
   }
 
