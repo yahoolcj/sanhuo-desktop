@@ -283,6 +283,8 @@ html, body {
 .task-preview { display: flex; flex-direction: column; gap: 8px; }
 .task-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-green); font-weight: 500; }
 .task-row .t-dot { width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gray-light); }
+.task-row .t-txt { display: block; }
+.t-sub { display: block; font-size: 10px; color: var(--gray-light); font-weight: 400; margin-top: 1px; }
 .task-row.done .t-txt { color: var(--gray-light); text-decoration: line-through; }
 .task-row.done .t-dot { border-color: var(--green-main); background: var(--green-main) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m8 12.2 2.8 2.8L16.5 9.5' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat; }
 
@@ -509,8 +511,11 @@ html, body {
   padding: 3px 9px; border-radius: 11px;
   flex-shrink: 0;
 }
-.status.unpublished { background: #FFEDE0; color: var(--chip-orange); }
-.status.published { background: var(--bg-green); color: var(--mid-green); }
+/* 四状态配色 */
+.status.st-todo,    .st-label.st-todo,    .chip-pink    { background: var(--pink-soft); color: var(--chip-pink); }
+.status.st-pending, .st-label.st-pending, .chip-orange  { background: #FFEDE0; color: var(--chip-orange); }
+.status.st-collect, .st-label.st-collect, .chip-blue    { background: #E3F0FB; color: #4A7FB5; }
+.status.st-done,    .st-label.st-done,    .chip-green   { background: var(--bg-green); color: var(--mid-green); }
 .order-del {
   width: 26px; height: 26px; flex-shrink: 0;
   border: none; background: transparent;
@@ -522,9 +527,74 @@ html, body {
 }
 .order-del svg { width: 15px; height: 15px; }
 .order-del:active { background: var(--pink-soft); color: var(--chip-pink); }
-.order-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray-green); }
+.order-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray-green); flex-wrap: wrap; }
 .order-meta .fee { color: var(--mid-green); font-weight: 700; }
-.order-req { font-size: 11px; color: var(--gray-green); }
+.order-meta .dep { color: #B8860B; font-weight: 600; }
+.order-req {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 11px; color: var(--gray-green);
+  padding-top: 2px;
+  border-top: 1px dashed var(--border);
+}
+.req-item { line-height: 1.6; }
+
+/* 首页:商单状态总览 */
+.status-overview { padding: 10px 6px; }
+.stat-btn {
+  flex: 1; border: none; background: transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; padding: 6px 2px;
+  border-radius: 14px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.stat-btn:active { background: var(--bg-green); }
+.stat-btn b { font-size: 20px; color: var(--ink-green); font-weight: 700; }
+.st-label { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9px; }
+
+/* 待办/结余页视图过滤行 */
+.view-filter-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.vf-hint { font-size: 12px; color: var(--gray-green); font-weight: 500; }
+.vf-add { width: auto; padding: 0 14px; height: 32px; }
+
+/* 我的页:状态筛选 */
+.mine-filters {
+  display: flex; gap: 6px;
+  flex-wrap: wrap;
+}
+.mine-filters .filter { flex: 1; min-width: 52px; padding: 0 6px; }
+
+/* 首页待办预览小卡片 */
+.t-row-sub { display: block; font-size: 10px; color: var(--gray-light); font-weight: 400; margin-top: 1px; }
+
+/* 表单:双列 */
+.form-row2 { display: flex; gap: 10px; }
+.form-row2 label { flex: 1; min-width: 0; }
+
+/* 状态选择器 */
+.status-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.sp-item {
+  flex: 1; min-width: 58px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  border-radius: 12px;
+  padding: 7px 4px;
+  font-size: 12px; font-weight: 600;
+  font-family: inherit;
+  color: var(--gray-green);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sp-item:active { transform: scale(0.94); }
+.sp-item.sp-todo.sp-selected    { background: var(--pink-soft); border-color: var(--chip-pink); color: var(--chip-pink); }
+.sp-item.sp-pending.sp-selected { background: #FFEDE0; border-color: var(--chip-orange); color: var(--chip-orange); }
+.sp-item.sp-collect.sp-selected { background: #E3F0FB; border-color: #4A7FB5; color: #4A7FB5; }
+.sp-item.sp-done.sp-selected    { background: var(--bg-green); border-color: var(--mid-green); color: var(--mid-green); }
+
+/* 新增/编辑商单表单弹窗 */
+.order-form-modal { gap: 12px; }
 
 /* 新增商单 FAB */
 .fab {
