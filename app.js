@@ -135,8 +135,54 @@
     $('#today-date').textContent = (now.getMonth() + 1) + '月' + now.getDate() + '日 · 周' + week[now.getDay()];
   }
 
-  /* ---------- 商单卡片渲染(通用) ---------- */
-  function renderOrderCard(o) {
+  /* ---------- 年月筛选 ---------- */
+  const monthFilter = { year: 0, month: 0, enabled: true }; /* 0,0 = 未初始化,首次用当前月 */
+
+  function initMonthFilter() {
+    const now = new Date();
+    monthFilter.year = now.getFullYear();
+    monthFilter.month = now.getMonth();
+  }
+  function monthLabel() {
+    return monthFilter.year + '年' + (monthFilter.month + 1) + '月';
+  }
+  function shiftMonth(delta) {
+    let d = new Date(monthFilter.year, monthFilter.month + delta, 1);
+    monthFilter.year = d.getFullYear();
+    monthFilter.month = d.getMonth();
+    monthFilter.enabled = true;
+    renderMonthFilters();
+    refreshAll();
+  }
+  function toggleMonthAll() {
+    monthFilter.enabled = !monthFilter.enabled;
+    renderMonthFilters();
+    refreshAll();
+  }
+  /* 渲染所有年月筛选器 UI */
+  function renderMonthFilters() {
+    const label = monthLabel();
+    ['todo', 'publish', 'balance', 'mine'].forEach((key) => {
+      const lbl = $('#mf-label-' + key);
+      if (lbl) lbl.textContent = label;
+      const allBtn = $('#mf-all-' + key);
+      if (allBtn) allBtn.classList.toggle('mf-active', !monthFilter.enabled);
+    });
+  }
+  /* 按年月过滤 */
+  function filterByMonth(orders) {
+    if (!monthFilter.enabled) return orders;
+    return orders.filter((o) => {
+      if (!o.date) return false;
+      const d = new Date(o.date);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === monthFilter.year && d.getMonth() === monthFilter.month;
+    });
+  }
+
+  /* ---------- 商单卡片渲染 ---------- */
+  /* mode: 'flow' 三页(仅完成按钮) | 'full' 我的页(删除+详情可编辑) */
+  function renderOrderCard(o, mode) {
     const meta = STATUS_META[o.status] || STATUS_META.todo;
     const st = '<span class="status ' + meta.cls + '">' + meta.label + '</span>';
     const datePart = fmtDue(o.date, true) || '未排期';
@@ -145,6 +191,28 @@
     const reqs = Array.isArray(o.requirements) && o.requirements.length
       ? '<div class="order-req">' + o.requirements.map((r) => '<span class="req-item">· ' + esc(r) + '</span>').join('') + '</div>'
       : '';
+
+    if (mode === 'flow') {
+      /* 三页:仅"完成"按钮,状态流转到下一阶段 */
+      const nextMeta = STATUS_META[NEXT_STATUS[o.status]] || null;
+      return (
+        '<div class="swipe-wrap" data-id="' + o.id + '">' +
+          '<div class="swipe-body order-card flow-card" data-status="' + o.status + '">' +
+            '<div class="order-head"><span class="order-name">' + esc(o.name) + '</span>' + st + '</div>' +
+            '<div class="order-meta"><span>' + esc(datePart) + '</span><span>·</span><span class="fee">' + fee + '</span>' + deposit + '</div>' +
+            reqs +
+            (nextMeta
+              ? '<button class="flow-done" data-act="flow-done" aria-label="完成">' +
+                  '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+                  '完成 · 转为' + nextMeta.label +
+                '</button>'
+              : '') +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    /* full:我的页,删除 + 详情可编辑 */
     return (
       '<div class="swipe-wrap" data-id="' + o.id + '">' +
         '<button class="swipe-del" data-act="del-order" aria-label="删除">删除</button>' +
@@ -163,34 +231,37 @@
     );
   }
 
-  function renderOrderList(listEl, orders) {
+  function renderOrderList(listEl, orders, mode) {
     if (orders.length === 0) {
       listEl.innerHTML = '<div class="empty-tip">这里还没有商单</div>';
       return;
     }
     const sorted = orders.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    listEl.innerHTML = sorted.map(renderOrderCard).join('');
+    listEl.innerHTML = sorted.map((o) => renderOrderCard(o, mode || 'full')).join('');
   }
 
-  /* ---------- 待办视图(状态=todo) ---------- */
+  /* 下一阶段状态 */
+  const NEXT_STATUS = { todo: 'pending', pending: 'collect', collect: 'done' };
+
+  /* ---------- 待办视图(状态=todo, 仅完成) ---------- */
   function renderTodoView() {
-    const orders = data.orders.filter((o) => o.status === 'todo');
+    const orders = filterByMonth(data.orders.filter((o) => o.status === 'todo'));
     $('#todo-head-chip').textContent = orders.length + ' 单';
-    renderOrderList($('#todo-order-list'), orders);
+    renderOrderList($('#todo-order-list'), orders, 'flow');
   }
 
-  /* ---------- 发布视图(状态=pending) ---------- */
+  /* ---------- 发布视图(状态=pending, 仅完成) ---------- */
   function renderPublishView() {
-    const orders = data.orders.filter((o) => o.status === 'pending');
+    const orders = filterByMonth(data.orders.filter((o) => o.status === 'pending'));
     $('#publish-head-chip').textContent = orders.length + ' 单';
-    renderOrderList($('#publish-order-list'), orders);
+    renderOrderList($('#publish-order-list'), orders, 'flow');
   }
 
-  /* ---------- 结余视图(状态=collect) ---------- */
+  /* ---------- 结余视图(状态=collect, 仅完成) ---------- */
   function renderBalanceView() {
-    const orders = data.orders.filter((o) => o.status === 'collect');
+    const orders = filterByMonth(data.orders.filter((o) => o.status === 'collect'));
     $('#balance-head-chip').textContent = orders.length + ' 单';
-    renderOrderList($('#balance-order-list'), orders);
+    renderOrderList($('#balance-order-list'), orders, 'flow');
 
     /* 统计:待收总额 = 费用合计;定金已收 = 定金合计 */
     const amount = orders.reduce((s, o) => s + (Number(o.fee) || 0), 0);
@@ -200,13 +271,14 @@
     $('#sb-deposit').textContent = money(deposit);
   }
 
-  /* ---------- 我的视图(全部 + 状态筛选) ---------- */
+  /* ---------- 我的视图(全部 + 状态筛选 + 年月, 完整操作) ---------- */
   function renderMine() {
-    const filtered = mineFilter === 'all'
+    const byStatus = mineFilter === 'all'
       ? data.orders.slice()
       : data.orders.filter((o) => o.status === mineFilter);
+    const filtered = filterByMonth(byStatus);
     $('#mine-total-chip').textContent = '共 ' + data.orders.length + ' 单';
-    renderOrderList($('#mine-order-list'), filtered);
+    renderOrderList($('#mine-order-list'), filtered, 'full');
   }
 
   document.querySelectorAll('#mine-filters .filter').forEach((btn) => {
@@ -435,8 +507,33 @@
     deleteOrder(id);
   });
 
-  /* 四个列表的点击委托:删除 / 打开详情 */
-  ['#todo-order-list', '#publish-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => {
+  /* ---------- 三页(flow)完成操作:状态流转 ---------- */
+  function flowDone(id) {
+    const order = data.orders.find((o) => o.id === id);
+    if (!order) return;
+    const next = NEXT_STATUS[order.status];
+    if (!next) return;
+    const nextLabel = STATUS_META[next].label;
+    askConfirm('完成商单', '将「' + order.name + '」从「' + STATUS_META[order.status].label + '」推进到「' + nextLabel + '」,确定吗?', () => {
+      order.status = next;
+      saveData();
+      refreshAll();
+    });
+  }
+
+  /* 三个状态列表(flow):仅响应"完成"按钮 */
+  ['#todo-order-list', '#publish-order-list', '#balance-order-list'].forEach((sel) => {
+    const listEl = $(sel);
+    listEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-act="flow-done"]');
+      if (!btn) return;
+      const wrap = btn.closest('.swipe-wrap');
+      flowDone(wrap && wrap.dataset.id);
+    });
+  });
+
+  /* 我的列表(full):删除 / 打开详情 */
+  ['#mine-order-list'].forEach((sel) => {
     const listEl = $(sel);
     listEl.addEventListener('click', (e) => {
       if (e.target.closest('[data-act="del-order"]')) {
@@ -452,6 +549,18 @@
       }
       const order = data.orders.find((o) => o.id === wrap.dataset.id);
       openOrderDetail(order);
+    });
+  });
+
+  /* ---------- 年月筛选器事件 ---------- */
+  document.querySelectorAll('.month-filter').forEach((mf) => {
+    mf.querySelectorAll('[data-mf-act]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.mfAct;
+        if (act === 'prev') shiftMonth(-1);
+        else if (act === 'next') shiftMonth(1);
+        else if (act === 'all') toggleMonthAll();
+      });
     });
   });
 
@@ -563,7 +672,9 @@
 
   /* ---------- 初始化 ---------- */
   function init() {
+    initMonthFilter(); /* 默认当前年月 */
     ['#todo-order-list', '#publish-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => initSwipe($(sel)));
+    renderMonthFilters();
     refreshAll();
   }
 

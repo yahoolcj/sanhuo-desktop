@@ -127,6 +127,12 @@
           <span class="vf-hint">状态:待办</span>
           <button class="mini-btn vf-add" data-goto="mine">新增商单 +</button>
         </div>
+        <div class="month-filter" data-mf="todo">
+          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span class="mf-label" id="mf-label-todo">2026年8月</span>
+          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="mf-all" data-mf-act="all" id="mf-all-todo">全部</button>
+        </div>
         <div class="order-list" id="todo-order-list"></div>
       </section>
 
@@ -139,6 +145,12 @@
         <div class="view-filter-row">
           <span class="vf-hint">状态:待发布</span>
           <button class="mini-btn vf-add" data-goto="mine">新增商单 +</button>
+        </div>
+        <div class="month-filter" data-mf="publish">
+          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span class="mf-label" id="mf-label-publish">2026年8月</span>
+          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="mf-all" data-mf-act="all" id="mf-all-publish">全部</button>
         </div>
         <div class="order-list" id="publish-order-list"></div>
       </section>
@@ -164,6 +176,12 @@
           </div>
         </div>
 
+        <div class="month-filter" data-mf="balance">
+          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span class="mf-label" id="mf-label-balance">2026年8月</span>
+          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="mf-all" data-mf-act="all" id="mf-all-balance">全部</button>
+        </div>
         <div class="order-list" id="balance-order-list"></div>
       </section>
 
@@ -172,6 +190,13 @@
         <div class="page-head">
           <h2>我的商单</h2>
           <span class="chip chip-green" id="mine-total-chip">共 0 单</span>
+        </div>
+
+        <div class="month-filter" data-mf="mine">
+          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span class="mf-label" id="mf-label-mine">2026年8月</span>
+          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="mf-all" data-mf-act="all" id="mf-all-mine">全部</button>
         </div>
 
         <div class="mine-filters" id="mine-filters">
