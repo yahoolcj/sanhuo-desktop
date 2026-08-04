@@ -93,7 +93,7 @@
   }
 
   /* ---------- 导航 ---------- */
-  const views = ['home', 'todo', 'publish', 'balance', 'mine'];
+  const views = ['home', 'mine', 'todo', 'publish', 'balance', 'done'];
   let mineFilter = 'all'; /* 我的页状态筛选 */
 
   function switchView(name) {
@@ -103,10 +103,11 @@
     document.querySelectorAll('.nav-item').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.view === name);
     });
-    if (name === 'mine' && mineFilter === 'all') renderMine();
+    if (name === 'mine') renderMine();
     if (name === 'todo') renderTodoView();
     if (name === 'publish') renderPublishView();
     if (name === 'balance') renderBalanceView();
+    if (name === 'done') renderDoneView();
   }
 
   document.querySelectorAll('.nav-item').forEach((btn) => {
@@ -115,12 +116,11 @@
 
   document.querySelectorAll('[data-goto]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      /* 首页状态统计卡:点击后跳转并设置我的页筛选 */
+      /* 首页状态统计卡:点击后跳转并设置我的页状态筛选 */
       if (btn.dataset.status) {
         mineFilter = btn.dataset.status;
-        document.querySelectorAll('#mine-filters .filter').forEach((f) => {
-          f.classList.toggle('active', f.dataset.status === mineFilter);
-        });
+        const sel = $('#mine-status-select');
+        if (sel) sel.value = mineFilter;
       }
       switchView(btn.dataset.goto);
     });
@@ -140,15 +140,21 @@
   }
 
   /* ---------- 年月筛选 ---------- */
-  const monthFilter = { year: 0, month: 0, enabled: true }; /* 0,0 = 未初始化,首次用当前月 */
+  const monthFilter = { year: 0, month: 0, enabled: true }; /* 0,0 = 未初始化,首次用当前月(我的页) */
+  const doneMonth = { year: 0, month: 0, enabled: false }; /* 完成页:默认全部 */
 
   function initMonthFilter() {
     const now = new Date();
     monthFilter.year = now.getFullYear();
     monthFilter.month = now.getMonth();
+    doneMonth.year = now.getFullYear();
+    doneMonth.month = now.getMonth();
   }
   function monthLabel() {
     return monthFilter.year + '年' + (monthFilter.month + 1) + '月';
+  }
+  function doneMonthLabel() {
+    return doneMonth.year + '年' + (doneMonth.month + 1) + '月';
   }
   function shiftMonth(delta) {
     let d = new Date(monthFilter.year, monthFilter.month + delta, 1);
@@ -163,17 +169,31 @@
     renderMonthFilters();
     refreshAll();
   }
+  function shiftDoneMonth(delta) {
+    let d = new Date(doneMonth.year, doneMonth.month + delta, 1);
+    doneMonth.year = d.getFullYear();
+    doneMonth.month = d.getMonth();
+    doneMonth.enabled = true;
+    renderMonthFilters();
+    refreshAll();
+  }
+  function toggleDoneMonthAll() {
+    doneMonth.enabled = !doneMonth.enabled;
+    renderMonthFilters();
+    refreshAll();
+  }
   /* 渲染所有年月筛选器 UI */
   function renderMonthFilters() {
-    const label = monthLabel();
-    ['todo', 'publish', 'balance', 'mine'].forEach((key) => {
-      const lbl = $('#mf-label-' + key);
-      if (lbl) lbl.textContent = label;
-      const allBtn = $('#mf-all-' + key);
-      if (allBtn) allBtn.classList.toggle('mf-active', !monthFilter.enabled);
-    });
+    const mineLbl = $('#mf-label-mine');
+    if (mineLbl) mineLbl.textContent = monthLabel();
+    const mineAll = $('#mf-all-mine');
+    if (mineAll) mineAll.classList.toggle('mf-active', !monthFilter.enabled);
+    const doneLbl = $('#mf-label-done');
+    if (doneLbl) doneLbl.textContent = doneMonthLabel();
+    const doneAll = $('#mf-all-done');
+    if (doneAll) doneAll.classList.toggle('mf-active', !doneMonth.enabled);
   }
-  /* 按年月过滤 */
+  /* 按年月过滤(我的页) */
   function filterByMonth(orders) {
     if (!monthFilter.enabled) return orders;
     return orders.filter((o) => {
@@ -181,6 +201,16 @@
       const d = new Date(o.date);
       if (isNaN(d.getTime())) return false;
       return d.getFullYear() === monthFilter.year && d.getMonth() === monthFilter.month;
+    });
+  }
+  /* 按年月过滤(完成页) */
+  function filterDoneByMonth(orders) {
+    if (!doneMonth.enabled) return orders;
+    return orders.filter((o) => {
+      if (!o.date) return false;
+      const d = new Date(o.date);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === doneMonth.year && d.getMonth() === doneMonth.month;
     });
   }
 
@@ -253,10 +283,18 @@
   /* 下一阶段状态 */
   const NEXT_STATUS = { todo: 'pending', pending: 'collect', collect: 'done' };
 
+  /* 页面头部 chip:数量为 0 时隐藏 */
+  function setHeadChip(id, count) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = count + ' 单';
+    el.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+
   /* ---------- 待办视图(状态=todo, 仅完成, 全部显示) ---------- */
   function renderTodoView() {
     const orders = data.orders.filter((o) => o.status === 'todo');
-    $('#todo-head-chip').textContent = orders.length + ' 单';
+    setHeadChip('#todo-head-chip', orders.length);
     $('#todo-desc').textContent = '未完成拍摄的商单一共有 ' + orders.length + ' 个';
     renderOrderList($('#todo-order-list'), orders, 'flow');
   }
@@ -264,7 +302,7 @@
   /* ---------- 发布视图(状态=pending, 仅完成, 全部显示) ---------- */
   function renderPublishView() {
     const orders = data.orders.filter((o) => o.status === 'pending');
-    $('#publish-head-chip').textContent = orders.length + ' 单';
+    setHeadChip('#publish-head-chip', orders.length);
     $('#publish-desc').textContent = '待发布的商单一共有 ' + orders.length + ' 个';
     renderOrderList($('#publish-order-list'), orders, 'flow');
   }
@@ -272,7 +310,7 @@
   /* ---------- 结余视图(状态=collect, 仅完成, 全部显示) ---------- */
   function renderBalanceView() {
     const orders = data.orders.filter((o) => o.status === 'collect');
-    $('#balance-head-chip').textContent = orders.length + ' 单';
+    setHeadChip('#balance-head-chip', orders.length);
     $('#balance-desc').textContent = '待结款的商单一共有 ' + orders.length + ' 个';
     renderOrderList($('#balance-order-list'), orders, 'flow');
 
@@ -282,6 +320,20 @@
     $('#sb-count').textContent = orders.length;
     $('#sb-amount').textContent = money(settle);
     $('#sb-deposit').textContent = money(deposit);
+  }
+
+  /* ---------- 完成视图(状态=done, 统计 + 月份搜索, 只读列表) ---------- */
+  function renderDoneView() {
+    const byStatus = data.orders.filter((o) => o.status === 'done');
+    const filtered = filterDoneByMonth(byStatus);
+    setHeadChip('#done-head-chip', byStatus.length);
+    $('#done-desc').textContent = '已完成的商单一共有 ' + byStatus.length + ' 个';
+    $('#done-count').textContent = filtered.length;
+    const fee = filtered.reduce((s, o) => s + (Number(o.fee) || 0), 0);
+    const income = filtered.reduce((s, o) => s + ((Number(o.fee) || 0) - (Number(o.deposit) || 0)), 0);
+    $('#done-amount').textContent = money(fee);
+    $('#done-income').textContent = money(income);
+    renderOrderList($('#done-order-list'), filtered, 'flow');
   }
 
   /* ---------- 我的视图(全部 + 状态筛选 + 年月, 完整操作) ---------- */
@@ -295,12 +347,10 @@
     renderOrderList($('#mine-order-list'), filtered, 'full');
   }
 
-  document.querySelectorAll('#mine-filters .filter').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      mineFilter = btn.dataset.status;
-      document.querySelectorAll('#mine-filters .filter').forEach((b) => b.classList.toggle('active', b === btn));
-      renderMine();
-    });
+  /* 我的页状态筛选:下拉选择器 */
+  $('#mine-status-select').addEventListener('change', (e) => {
+    mineFilter = e.target.value;
+    renderMine();
   });
 
   /* ---------- 首页预览与统计 ---------- */
@@ -355,11 +405,12 @@
     }
   }
 
-  /* ---------- 菜单徽标 ---------- */
+  /* ---------- 菜单徽标(0 时隐藏) ---------- */
   function renderBadges() {
     const todoCount = data.orders.filter((o) => o.status === 'todo').length;
     const publishCount = data.orders.filter((o) => o.status === 'pending').length;
     const collectCount = data.orders.filter((o) => o.status === 'collect').length;
+    const doneCount = data.orders.filter((o) => o.status === 'done').length;
 
     $('#badge-todo').textContent = todoCount;
     $('#badge-todo').style.display = todoCount > 0 ? 'flex' : 'none';
@@ -367,6 +418,8 @@
     $('#badge-publish').style.display = publishCount > 0 ? 'flex' : 'none';
     $('#badge-balance').textContent = collectCount;
     $('#badge-balance').style.display = collectCount > 0 ? 'flex' : 'none';
+    $('#badge-done').textContent = doneCount;
+    $('#badge-done').style.display = doneCount > 0 ? 'flex' : 'none';
   }
 
   /* ---------- 商单表单(新增/编辑共用) ---------- */
@@ -441,8 +494,8 @@
     $(addBtnId).addEventListener('click', doAdd);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
   }
-  bindReqEditor($('#f-req-editor'), '#f-req-list', '#f-req-input', '#f-req-add');
-  bindReqEditor($('#e-req-editor'), '#e-req-list', '#e-req-input', '#e-req-add');
+  bindReqEditor('#f-req-editor', '#f-req-list', '#f-req-input', '#f-req-add');
+  bindReqEditor('#e-req-editor', '#e-req-list', '#e-req-input', '#e-req-add');
 
   function openModal(order) {
     if (order) {
@@ -636,12 +689,19 @@
 
   /* ---------- 年月筛选器事件 ---------- */
   document.querySelectorAll('.month-filter').forEach((mf) => {
+    const isDone = mf.dataset.mf === 'done';
     mf.querySelectorAll('[data-mf-act]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const act = btn.dataset.mfAct;
-        if (act === 'prev') shiftMonth(-1);
-        else if (act === 'next') shiftMonth(1);
-        else if (act === 'all') toggleMonthAll();
+        if (isDone) {
+          if (act === 'prev') shiftDoneMonth(-1);
+          else if (act === 'next') shiftDoneMonth(1);
+          else if (act === 'all') toggleDoneMonthAll();
+        } else {
+          if (act === 'prev') shiftMonth(-1);
+          else if (act === 'next') shiftMonth(1);
+          else if (act === 'all') toggleMonthAll();
+        }
       });
     });
   });
@@ -747,6 +807,7 @@
     renderTodoView();
     renderPublishView();
     renderBalanceView();
+    renderDoneView();
     renderMine();
     renderReminder();
     renderBadges();

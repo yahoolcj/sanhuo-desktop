@@ -623,6 +623,27 @@ html, body {
 }
 .mine-filters .filter { flex: 1; min-width: 52px; padding: 0 6px; }
 
+/* 我的页状态筛选下拉 */
+.status-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  background: var(--card);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-green);
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236B8F76' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  box-shadow: 0 2px 8px rgba(74, 112, 82, 0.06);
+}
+
 /* 首页待办预览小卡片 */
 .t-row-sub { display: block; font-size: 10px; color: var(--gray-light); font-weight: 400; margin-top: 1px; }
 

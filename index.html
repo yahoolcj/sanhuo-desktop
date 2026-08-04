@@ -17,15 +17,15 @@
     <aside class="sidebar">
       <div class="logo">三火</div>
       <nav class="nav">
+        <button class="nav-item active" data-view="home">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3.5 10.8 12 4l8.5 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 20v-5h4v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>首页</span>
+        </button>
         <button class="nav-item" data-view="mine">
           <span class="nav-icon-wrap">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M5 20c.8-3.5 3.5-5.5 7-5.5s6.2 2 7 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </span>
           <span>我的</span>
-        </button>
-        <button class="nav-item active" data-view="home">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3.5 10.8 12 4l8.5 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 20v-5h4v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>首页</span>
         </button>
         <button class="nav-item" data-view="todo">
           <span class="nav-icon-wrap">
@@ -47,6 +47,13 @@
             <span class="badge" id="badge-balance">0</span>
           </span>
           <span>结余</span>
+        </button>
+        <button class="nav-item" data-view="done">
+          <span class="nav-icon-wrap">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="2"/><path d="m8 12.2 2.8 2.8L16.5 9.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="badge" id="badge-done">0</span>
+          </span>
+          <span>完成</span>
         </button>
       </nav>
       <div class="local-tip">
@@ -81,7 +88,7 @@
           <button class="stat stat-btn" data-goto="balance">
             <b id="ov-collect">0</b><span class="st-label st-collect">待结款</span>
           </button>
-          <button class="stat stat-btn" data-goto="mine" data-status="done">
+          <button class="stat stat-btn" data-goto="done">
             <b id="ov-done">0</b><span class="st-label st-done">已完成</span>
           </button>
         </div>
@@ -143,10 +150,8 @@
           <h2>结余待收</h2>
           <span class="chip chip-orange" id="balance-head-chip">0 单</span>
         </div>
-
-        <div class="stat-card">
-          <div class="stat"><b id="sb-count">0</b><span>待结款</span></div>
         <p class="page-desc" id="balance-desc">待结款的商单一共有 0 个</p>
+
         <div class="stat-card">
           <div class="stat"><b id="sb-count">0</b><span>待结款</span></div>
           <div class="stat"><b id="sb-amount">¥0</b><span>待结算金额</span></div>
@@ -164,6 +169,30 @@
         <div class="order-list" id="balance-order-list"></div>
       </section>
 
+      <!-- 完成:状态=已完成 的商单 -->
+      <section class="view" id="view-done">
+        <div class="page-head">
+          <h2>已完成</h2>
+          <span class="chip chip-green" id="done-head-chip">0 单</span>
+        </div>
+        <p class="page-desc" id="done-desc">已完成的商单一共有 0 个</p>
+
+        <div class="stat-card">
+          <div class="stat"><b id="done-count">0</b><span>完成单量</span></div>
+          <div class="stat"><b id="done-amount">¥0</b><span>总费用</span></div>
+          <div class="stat"><b id="done-income">¥0</b><span>已收金额</span></div>
+        </div>
+
+        <div class="month-filter" data-mf="done">
+          <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span class="mf-label" id="mf-label-done">2026年8月</span>
+          <button class="mf-btn" data-mf-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="mf-all mf-active" data-mf-act="all" id="mf-all-done">全部</button>
+        </div>
+
+        <div class="order-list" id="done-order-list"></div>
+      </section>
+
       <!-- 我的:新增商单 + 全部商单管理 -->
       <section class="view" id="view-mine">
         <div class="page-head">
@@ -179,13 +208,13 @@
           <button class="mf-all" data-mf-act="all" id="mf-all-mine">全部</button>
         </div>
 
-        <div class="mine-filters" id="mine-filters">
-          <button class="filter active" data-status="all">全部</button>
-          <button class="filter" data-status="todo">待办</button>
-          <button class="filter" data-status="pending">待发布</button>
-          <button class="filter" data-status="collect">待结款</button>
-          <button class="filter" data-status="done">已完成</button>
-        </div>
+        <select class="status-select" id="mine-status-select" aria-label="状态筛选">
+          <option value="all">全部状态</option>
+          <option value="todo">待办</option>
+          <option value="pending">待发布</option>
+          <option value="collect">待结款</option>
+          <option value="done">已完成</option>
+        </select>
 
         <div class="order-list" id="mine-order-list"></div>
         <button class="fab" id="order-add-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></button>
