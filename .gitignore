@@ -1,0 +1,9 @@
+# 内部测试与临时文件
+.internal-tests/
+.workbuddy/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
