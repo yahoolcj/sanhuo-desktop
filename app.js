@@ -223,8 +223,18 @@
     const fee = money(o.fee);
     const deposit = o.deposit ? '<span class="dep">定金 ' + money(o.deposit) + '</span>' : '';
     const reqItems = normReqs(o.requirements);
+    const reqTotal = reqItems.length;
+    const reqDoneCount = reqItems.filter((r) => r.done).length;
+    const reqLeft = reqTotal - reqDoneCount;
+    const reqSummary = reqTotal
+      ? '<div class="req-summary"><span class="req-progress">子需求 ' + reqDoneCount + '/' + reqTotal + '</span>' +
+        (reqLeft > 0
+          ? '<span class="req-left">剩 ' + reqLeft + ' 项待完成</span>'
+          : '<span class="req-all">全部完成</span>') +
+        '</div>'
+      : '';
     const reqs = reqItems.length
-      ? '<div class="order-req">' + reqItems.map((r) =>
+      ? '<div class="order-req">' + reqSummary + reqItems.map((r) =>
           '<span class="req-item' + (r.done ? ' done' : '') + '">' +
             (r.done ? '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<i class="req-dot"></i>') +
             esc(r.text) +
@@ -470,16 +480,23 @@
   function bindReqEditor(editorId, listId, inputId, addBtnId) {
     const editor = $(editorId);
     editor.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-req-act]');
-      if (!btn) return;
-      const item = btn.closest('.req-edit-item');
-      const i = item && Number(item.dataset.i);
-      if (i == null || !reqEditorState.list[i]) return;
-      if (btn.dataset.reqAct === 'toggle') {
-        reqEditorState.list[i].done = !reqEditorState.list[i].done;
-      } else if (btn.dataset.reqAct === 'del') {
-        reqEditorState.list.splice(i, 1);
+      /* 删除按钮:直接删除,不触发整行切换 */
+      const delBtn = e.target.closest('[data-req-act="del"]');
+      if (delBtn) {
+        const item = delBtn.closest('.req-edit-item');
+        const i = item && Number(item.dataset.i);
+        if (i != null && reqEditorState.list[i]) {
+          reqEditorState.list.splice(i, 1);
+          renderReqList(listId);
+        }
+        return;
       }
+      /* 点击整行:切换完成状态 */
+      const item = e.target.closest('.req-edit-item');
+      if (!item) return;
+      const i = Number(item.dataset.i);
+      if (i == null || !reqEditorState.list[i]) return;
+      reqEditorState.list[i].done = !reqEditorState.list[i].done;
       renderReqList(listId);
     });
     const input = $(inputId);

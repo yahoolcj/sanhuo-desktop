@@ -537,6 +537,25 @@ html, body {
   border-top: 1px dashed var(--border);
 }
 .req-item { line-height: 1.6; }
+
+/* 卡片子需求统计行 */
+.req-summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding-bottom: 3px;
+}
+.req-progress { font-size: 10px; color: var(--gray-green); font-weight: 500; }
+.req-left {
+  font-size: 10px; font-weight: 700;
+  color: var(--chip-orange);
+  background: #FFEDE0;
+  padding: 2px 8px; border-radius: 9px;
+}
+.req-all {
+  font-size: 10px; font-weight: 700;
+  color: var(--mid-green);
+  background: var(--bg-green);
+  padding: 2px 8px; border-radius: 9px;
+}
 /* flow 卡片:完成按钮上方留呼吸 */
 .flow-card .order-req { margin-bottom: 2px; }
 
@@ -759,7 +778,10 @@ html, body {
   background: var(--bg-green);
   border-radius: 12px;
   padding: 7px 10px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
+.req-edit-item:active { background: #E2EFE4; transform: scale(0.99); }
 .req-check {
   width: 20px; height: 20px; flex-shrink: 0;
   border-radius: 50%;
