@@ -436,14 +436,14 @@
   }
 
   /* ---------- 金额脱敏切换(眼睛) ---------- */
+  const EYE_CLOSED_SVG = '<svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const EYE_OPEN_SVG = '<svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>';
   function renderMoneyEye() {
     const eye = $('#money-eye');
     if (!eye) return;
     eye.classList.toggle('masked', moneyMask);
-    const open = eye.querySelector('.eye-open');
-    const closed = eye.querySelector('.eye-closed');
-    if (open) open.hidden = moneyMask;   /* 脱敏时闭眼图标(点击可显示) */
-    if (closed) closed.hidden = !moneyMask;
+    /* 单图标切换:脱敏=闭眼斜线,显示=睁眼 */
+    eye.innerHTML = moneyMask ? EYE_CLOSED_SVG : EYE_OPEN_SVG;
   }
   function toggleMoneyMask() {
     moneyMask = !moneyMask;
@@ -491,9 +491,6 @@
           '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
         '</span>' +
         '<span class="req-txt">' + esc(r.text) + '</span>' +
-        '<button type="button" class="req-del" data-req-act="del" aria-label="删除">' +
-          '<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l1 12a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 19l1-12M10 11v5.5M14 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-        '</button>' +
       '</div>'
     ).join('');
   }
@@ -502,18 +499,11 @@
     const editor = $(editorId);
     let lastReqTap = 0; /* 防双击保护 */
     editor.addEventListener('click', (e) => {
-      const delBtn = e.target.closest('[data-req-act="del"]');
       const item = e.target.closest('.req-edit-item');
       if (!item) return;
       const i = Number(item.dataset.i);
       if (i == null || !reqEditorState.list[i]) return;
-      if (delBtn) {
-        /* 删除按钮:只删除当前项,不切换状态 */
-        reqEditorState.list.splice(i, 1);
-        renderReqList(listId);
-        return;
-      }
-      /* 整行点击:只切换当前项(与 todolist 一致) */
+      /* 点击勾选行:只切换当前项(与 todolist 一致) */
       const now = Date.now();
       if (now - lastReqTap < 250) return; /* 忽略双击/误触连点 */
       lastReqTap = now;
