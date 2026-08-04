@@ -169,6 +169,20 @@ html, body {
   font-size: 10px; font-weight: 500;
   text-align: center;
 }
+/* 金额显示切换(眼睛) */
+.eye-toggle {
+  width: 44px; height: 44px;
+  border: none; border-radius: 50%;
+  background: var(--bg-green);
+  color: var(--mid-green);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.eye-toggle:active { background: #E2EFE4; }
+.eye-toggle svg { width: 20px; height: 20px; }
+.eye-toggle.masked { color: var(--mid-green); }
+.eye-toggle:not(.masked) { background: var(--green-main); color: #fff; }
 
 /* ============================================================
    右侧内容区(背景:画布中的森系水彩图,三页各自对应)
@@ -781,15 +795,15 @@ html, body {
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
 }
-.req-edit-item:active { background: #E2EFE4; transform: scale(0.99); }
+.req-edit-item:active { background: #E2EFE4; }
 .req-check {
   width: 20px; height: 20px; flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid var(--gray-light);
   background: transparent;
-  cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
+  pointer-events: none; /* 点击整行触发,勾选框不单独拦截事件 */
 }
 .req-check svg { width: 11px; height: 11px; opacity: 0; }
 .req-edit-item.done .req-check { border-color: var(--green-main); background: var(--green-main); }

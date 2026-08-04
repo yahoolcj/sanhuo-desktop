@@ -75,7 +75,10 @@
     return base + ' ' + hh + ':' + mm;
   }
 
+  let moneyMask = true; /* 金额脱敏开关:true=显示 *** */
+
   function money(n) {
+    if (moneyMask) return '¥***';
     const v = Number(n) || 0;
     return '¥' + v.toLocaleString('zh-CN');
   }
@@ -140,7 +143,7 @@
   }
 
   /* ---------- 年月筛选 ---------- */
-  const monthFilter = { year: 0, month: 0, enabled: true }; /* 0,0 = 未初始化,首次用当前月(我的页) */
+  const monthFilter = { year: 0, month: 0, enabled: false }; /* 我的页:默认查全部(点箭头才按月筛选) */
   const doneMonth = { year: 0, month: 0, enabled: false }; /* 完成页:默认全部 */
 
   function initMonthFilter() {
@@ -432,6 +435,24 @@
     $('#badge-done').style.display = doneCount > 0 ? 'flex' : 'none';
   }
 
+  /* ---------- 金额脱敏切换(眼睛) ---------- */
+  function renderMoneyEye() {
+    const eye = $('#money-eye');
+    if (!eye) return;
+    eye.classList.toggle('masked', moneyMask);
+    const open = eye.querySelector('.eye-open');
+    const closed = eye.querySelector('.eye-closed');
+    if (open) open.hidden = moneyMask;   /* 脱敏时闭眼图标(点击可显示) */
+    if (closed) closed.hidden = !moneyMask;
+  }
+  function toggleMoneyMask() {
+    moneyMask = !moneyMask;
+    renderMoneyEye();
+    refreshAll();
+  }
+  const moneyEye = $('#money-eye');
+  if (moneyEye) moneyEye.addEventListener('click', toggleMoneyMask);
+
   /* ---------- 商单表单(新增/编辑共用) ---------- */
   const modal = $('#order-modal');
   const detailModal = $('#detail-modal');
@@ -466,9 +487,9 @@
     }
     listEl.innerHTML = reqEditorState.list.map((r, i) =>
       '<div class="req-edit-item' + (r.done ? ' done' : '') + '" data-i="' + i + '">' +
-        '<button type="button" class="req-check" data-req-act="toggle" aria-label="完成">' +
+        '<span class="req-check">' +
           '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-        '</button>' +
+        '</span>' +
         '<span class="req-txt">' + esc(r.text) + '</span>' +
         '<button type="button" class="req-del" data-req-act="del" aria-label="删除">' +
           '<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l1 12a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 19l1-12M10 11v5.5M14 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
@@ -479,23 +500,23 @@
 
   function bindReqEditor(editorId, listId, inputId, addBtnId) {
     const editor = $(editorId);
+    let lastReqTap = 0; /* 防双击保护 */
     editor.addEventListener('click', (e) => {
-      /* 删除按钮:直接删除,不触发整行切换 */
       const delBtn = e.target.closest('[data-req-act="del"]');
-      if (delBtn) {
-        const item = delBtn.closest('.req-edit-item');
-        const i = item && Number(item.dataset.i);
-        if (i != null && reqEditorState.list[i]) {
-          reqEditorState.list.splice(i, 1);
-          renderReqList(listId);
-        }
-        return;
-      }
-      /* 点击整行:切换完成状态 */
       const item = e.target.closest('.req-edit-item');
       if (!item) return;
       const i = Number(item.dataset.i);
       if (i == null || !reqEditorState.list[i]) return;
+      if (delBtn) {
+        /* 删除按钮:只删除当前项,不切换状态 */
+        reqEditorState.list.splice(i, 1);
+        renderReqList(listId);
+        return;
+      }
+      /* 整行点击:只切换当前项(与 todolist 一致) */
+      const now = Date.now();
+      if (now - lastReqTap < 250) return; /* 忽略双击/误触连点 */
+      lastReqTap = now;
       reqEditorState.list[i].done = !reqEditorState.list[i].done;
       renderReqList(listId);
     });
@@ -835,6 +856,7 @@
     initMonthFilter(); /* 默认当前年月 */
     ['#todo-order-list', '#publish-order-list', '#balance-order-list', '#mine-order-list'].forEach((sel) => initSwipe($(sel)));
     renderMonthFilters();
+    renderMoneyEye();
     refreshAll();
   }
 
