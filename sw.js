@@ -2,7 +2,7 @@
    三火工作台 - Service Worker
    静态资源缓存策略:Cache First + 网络回退
    ============================================================ */
-const CACHE_NAME = 'sanhuo-workbench-v6';
+const CACHE_NAME = 'sanhuo-workbench-v7';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const CORE_ASSETS = [
   './assets/images/2_240.png',
   './assets/images/2_242.png',
   './assets/images/2_243_cropped.png',
+  './assets/images/logo.png',
   './assets/images/icon-192.png',
   './assets/images/icon-512.png'
 ];
