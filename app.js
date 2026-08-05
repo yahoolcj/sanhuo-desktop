@@ -478,8 +478,10 @@
 
   /* ---------- 子需求编辑器(表单/详情共用) ---------- */
   const reqEditorState = { list: [], editing: -1 }; /* editing: 正在编辑的索引,-1 无 */
+  let reqGhostGuard = 0; /* 退出编辑模式重绘后的幽灵点击防护时间戳 */
 
   function renderReqList(containerId) {
+    const wasEditing = reqEditorState.editing >= 0; /* 渲染前状态 */
     const listEl = $(containerId);
     if (reqEditorState.list.length === 0) {
       listEl.innerHTML = '<div class="req-empty">暂无子需求,点击下方添加</div>';
@@ -516,12 +518,18 @@
       const inp = listEl.querySelector('.req-edit-input');
       if (inp) inp.focus();
     }
+    /* 退出编辑模式的重绘:开启幽灵点击防护(防止重绘后双击合成事件误触新 DOM 的按钮) */
+    if (wasEditing && reqEditorState.editing < 0) {
+      reqGhostGuard = Date.now() + 200;
+    }
   }
 
   function bindReqEditor(editorId, listId, inputId, addBtnId) {
     const editor = $(editorId);
     let lastReqTap = 0; /* 防双击保护 */
     editor.addEventListener('click', (e) => {
+      /* 幽灵点击防护:退出编辑模式重绘后 200ms 内的合成点击直接忽略 */
+      if (Date.now() < reqGhostGuard) return;
       const actEl = e.target.closest('[data-req-act]');
       const item = e.target.closest('.req-edit-item');
       if (!item) return;
@@ -534,19 +542,26 @@
           reqEditorState.editing = i;
           renderReqList(listId);
         } else if (act === 'save') {
+          /* 停止冒泡:避免事件穿透到外层(modal 等) */
+          if (e.stopPropagation) e.stopPropagation();
           const inp = item.querySelector('.req-edit-input');
           const text = inp ? inp.value.trim() : '';
           if (text) reqEditorState.list[i].text = text;
           reqEditorState.editing = -1;
+          reqGhostGuard = Date.now() + 200; /* 退出编辑:防重绘后幽灵点击 */
           renderReqList(listId);
         } else if (act === 'cancel') {
+          if (e.stopPropagation) e.stopPropagation();
           reqEditorState.editing = -1;
+          reqGhostGuard = Date.now() + 200; /* 退出编辑:防重绘后幽灵点击 */
           renderReqList(listId);
         } else if (act === 'del') {
           /* 删除当前项(已勾选同样可删) */
           reqEditorState.list.splice(i, 1);
-          if (reqEditorState.editing === i) reqEditorState.editing = -1;
-          else if (reqEditorState.editing > i) reqEditorState.editing--;
+          if (reqEditorState.editing === i) {
+            reqEditorState.editing = -1;
+            reqGhostGuard = Date.now() + 200; /* 删除编辑中项:同样防幽灵 */
+          } else if (reqEditorState.editing > i) reqEditorState.editing--;
           renderReqList(listId);
         }
         return;
