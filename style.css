@@ -810,15 +810,47 @@ html, body {
 .req-edit-item.done .req-check svg { opacity: 1; }
 .req-txt { flex: 1; font-size: 12px; color: var(--ink-green); min-width: 0; word-break: break-all; }
 .req-edit-item.done .req-txt { color: var(--gray-light); text-decoration: line-through; }
-.req-del {
-  width: 22px; height: 22px; flex-shrink: 0;
+.req-edit, .req-del {
+  width: 26px; height: 26px; flex-shrink: 0;
   border: none; background: transparent;
   color: var(--gray-light); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
 }
-.req-del svg { width: 13px; height: 13px; }
-.req-del:active { background: var(--pink-soft); color: var(--chip-pink); }
+.req-edit:hover, .req-edit:active { background: #E2EFE4; color: var(--mid-green); }
+.req-del:hover, .req-del:active { background: var(--pink-soft); color: var(--chip-pink); }
+.req-edit svg, .req-del svg { width: 14px; height: 14px; }
+/* 编辑模式行 */
+.req-edit-item.editing {
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: default;
+  padding: 6px 8px;
+}
+.req-edit-item.editing:active { background: var(--card); }
+.req-edit-input {
+  flex: 1; height: 34px; min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 12px; font-family: inherit;
+  color: var(--ink-green); outline: none;
+  background: #fff;
+}
+.req-edit-input:focus { border-color: var(--green-main); }
+.req-edit-ok, .req-edit-cancel {
+  flex-shrink: 0;
+  border: none; border-radius: 10px;
+  height: 34px; padding: 0 12px;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.req-edit-ok { background: var(--green-main); color: #fff; }
+.req-edit-ok:active { opacity: 0.85; }
+.req-edit-cancel { background: var(--bg-green); color: var(--mid-green); }
+.req-edit-cancel:active { background: #E2EFE4; }
 .req-add-row { display: flex; gap: 6px; }
 .req-add-row input {
   flex: 1; height: 36px;

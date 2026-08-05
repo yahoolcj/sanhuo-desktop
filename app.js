@@ -477,7 +477,7 @@
   bindStatusPicker($('#e-status-picker'));
 
   /* ---------- 子需求编辑器(表单/详情共用) ---------- */
-  const reqEditorState = { list: [] }; /* 当前编辑的子需求数组 {text, done} */
+  const reqEditorState = { list: [], editing: -1 }; /* editing: 正在编辑的索引,-1 无 */
 
   function renderReqList(containerId) {
     const listEl = $(containerId);
@@ -485,30 +485,95 @@
       listEl.innerHTML = '<div class="req-empty">暂无子需求,点击下方添加</div>';
       return;
     }
-    listEl.innerHTML = reqEditorState.list.map((r, i) =>
-      '<div class="req-edit-item' + (r.done ? ' done' : '') + '" data-i="' + i + '">' +
-        '<span class="req-check">' +
-          '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-        '</span>' +
-        '<span class="req-txt">' + esc(r.text) + '</span>' +
-      '</div>'
-    ).join('');
+    listEl.innerHTML = reqEditorState.list.map((r, i) => {
+      if (reqEditorState.editing === i) {
+        /* 编辑模式:输入框 + 保存/取消 */
+        return (
+          '<div class="req-edit-item editing" data-i="' + i + '">' +
+            '<input type="text" class="req-edit-input" value="' + esc(r.text) + '" maxlength="40">' +
+            '<button type="button" class="req-edit-ok" data-req-act="save">保存</button>' +
+            '<button type="button" class="req-edit-cancel" data-req-act="cancel">取消</button>' +
+          '</div>'
+        );
+      }
+      return (
+        '<div class="req-edit-item' + (r.done ? ' done' : '') + '" data-i="' + i + '">' +
+          '<span class="req-check">' +
+            '<svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12.5l5 5 10-10" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</span>' +
+          '<span class="req-txt">' + esc(r.text) + '</span>' +
+          '<button type="button" class="req-edit" data-req-act="edit" aria-label="编辑">' +
+            '<svg viewBox="0 0 24 24" fill="none"><path d="M4 20h16M13.5 6.5l4 4L8 20H4v-4L13.5 6.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>' +
+          '</button>' +
+          '<button type="button" class="req-del" data-req-act="del" aria-label="删除">' +
+            '<svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l1 12a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 19l1-12M10 11v5.5M14 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</button>' +
+        '</div>'
+      );
+    }).join('');
+    /* 编辑模式下自动聚焦输入框 */
+    if (reqEditorState.editing >= 0) {
+      const inp = listEl.querySelector('.req-edit-input');
+      if (inp) inp.focus();
+    }
   }
 
   function bindReqEditor(editorId, listId, inputId, addBtnId) {
     const editor = $(editorId);
     let lastReqTap = 0; /* 防双击保护 */
     editor.addEventListener('click', (e) => {
+      const actEl = e.target.closest('[data-req-act]');
       const item = e.target.closest('.req-edit-item');
       if (!item) return;
       const i = Number(item.dataset.i);
       if (i == null || !reqEditorState.list[i]) return;
-      /* 点击勾选行:只切换当前项(与 todolist 一致) */
+      if (actEl) {
+        const act = actEl.dataset.reqAct;
+        if (act === 'edit') {
+          /* 进入编辑模式 */
+          reqEditorState.editing = i;
+          renderReqList(listId);
+        } else if (act === 'save') {
+          const inp = item.querySelector('.req-edit-input');
+          const text = inp ? inp.value.trim() : '';
+          if (text) reqEditorState.list[i].text = text;
+          reqEditorState.editing = -1;
+          renderReqList(listId);
+        } else if (act === 'cancel') {
+          reqEditorState.editing = -1;
+          renderReqList(listId);
+        } else if (act === 'del') {
+          /* 删除当前项(已勾选同样可删) */
+          reqEditorState.list.splice(i, 1);
+          if (reqEditorState.editing === i) reqEditorState.editing = -1;
+          else if (reqEditorState.editing > i) reqEditorState.editing--;
+          renderReqList(listId);
+        }
+        return;
+      }
+      /* 点击非按钮区域:切换勾选(与 todolist 一致) */
       const now = Date.now();
       if (now - lastReqTap < 250) return; /* 忽略双击/误触连点 */
       lastReqTap = now;
       reqEditorState.list[i].done = !reqEditorState.list[i].done;
       renderReqList(listId);
+    });
+    /* 编辑模式:回车保存 / Esc 取消 */
+    editor.addEventListener('keydown', (e) => {
+      if (reqEditorState.editing < 0) return;
+      const item = e.target.closest('.req-edit-item.editing');
+      if (!item) return;
+      const i = Number(item.dataset.i);
+      if (e.key === 'Enter') {
+        const inp = item.querySelector('.req-edit-input');
+        const text = inp ? inp.value.trim() : '';
+        if (i != null && reqEditorState.list[i] && text) reqEditorState.list[i].text = text;
+        reqEditorState.editing = -1;
+        renderReqList(listId);
+      } else if (e.key === 'Escape') {
+        reqEditorState.editing = -1;
+        renderReqList(listId);
+      }
     });
     const input = $(inputId);
     const doAdd = () => {
@@ -535,6 +600,7 @@
       $('#f-fee').value = order.fee != null ? order.fee : '';
       $('#f-deposit').value = order.deposit != null ? order.deposit : '';
       reqEditorState.list = normReqs(order.requirements);
+      reqEditorState.editing = -1;
       setStatusPicker($('#f-status-picker'), order.status || 'todo');
     } else {
       /* 新增模式 */
@@ -545,6 +611,7 @@
       $('#f-fee').value = '';
       $('#f-deposit').value = '';
       reqEditorState.list = [];
+      reqEditorState.editing = -1;
       setStatusPicker($('#f-status-picker'), 'todo');
     }
     renderReqList('#f-req-list');
@@ -592,6 +659,7 @@
     $('#e-fee').value = order.fee != null ? order.fee : '';
     $('#e-deposit').value = order.deposit != null ? order.deposit : '';
     reqEditorState.list = normReqs(order.requirements);
+    reqEditorState.editing = -1;
     setStatusPicker($('#e-status-picker'), order.status || 'todo');
     $('#d-created').textContent = order.createdAt
       ? new Date(order.createdAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
