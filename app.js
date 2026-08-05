@@ -538,7 +538,9 @@
       if (actEl) {
         const act = actEl.dataset.reqAct;
         if (act === 'edit') {
-          /* 进入编辑模式 */
+          /* 仅当真实点击编辑按钮时进入编辑模式(阻止冒泡/捕获穿透) */
+          if (e.stopPropagation) e.stopPropagation();
+          if (e.preventDefault) e.preventDefault();
           reqEditorState.editing = i;
           renderReqList(listId);
         } else if (act === 'save') {
@@ -557,6 +559,7 @@
           renderReqList(listId);
         } else if (act === 'del') {
           /* 删除当前项(已勾选同样可删) */
+          if (e.stopPropagation) e.stopPropagation();
           reqEditorState.list.splice(i, 1);
           if (reqEditorState.editing === i) {
             reqEditorState.editing = -1;
@@ -571,6 +574,7 @@
       if (now - lastReqTap < 250) return; /* 忽略双击/误触连点 */
       lastReqTap = now;
       reqEditorState.list[i].done = !reqEditorState.list[i].done;
+      reqGhostGuard = Date.now() + 200; /* 勾选重绘后也防幽灵点击误触编辑按钮 */
       renderReqList(listId);
     });
     /* 编辑模式:回车保存 / Esc 取消 */
