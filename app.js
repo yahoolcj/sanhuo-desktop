@@ -55,7 +55,11 @@
   function fmtDate(d) {
     const now = new Date();
     const t = new Date(d);
-    const diff = Math.floor((t - now) / 86400000);
+    if (isNaN(t.getTime())) return '';
+    /* 归一化到当天 0 点,按日历日差计算(避免时分秒导致差一天误判) */
+    const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tDay = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    const diff = Math.round((tDay - nowDay) / 86400000);
     if (diff === 0) return '今天';
     if (diff === 1) return '明天';
     if (diff === 2) return '后天';
@@ -289,7 +293,8 @@
       listEl.innerHTML = '<div class="empty-tip">这里还没有商单</div>';
       return;
     }
-    const sorted = orders.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    /* 按添加时间倒序(新添加的排前面) */
+    const sorted = orders.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     listEl.innerHTML = sorted.map((o) => renderOrderCard(o, mode || 'full')).join('');
   }
 
@@ -376,10 +381,10 @@
     $('#ov-collect').textContent = byStatus.collect.length;
     $('#ov-done').textContent = byStatus.done.length;
 
-    /* 待办商单预览 */
+    /* 待办商单预览(按添加时间倒序取前 3) */
     $('#home-todo-chip').textContent = byStatus.todo.length + ' 单';
     const todoList = $('#home-todo-list');
-    const shown = byStatus.todo.slice(0, 3);
+    const shown = byStatus.todo.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 3);
     todoList.innerHTML = shown.length === 0
       ? '<div class="empty-tip">没有待办商单,轻松一下</div>'
       : shown.map((o) =>
@@ -423,7 +428,6 @@
     const todoCount = data.orders.filter((o) => o.status === 'todo').length;
     const publishCount = data.orders.filter((o) => o.status === 'pending').length;
     const collectCount = data.orders.filter((o) => o.status === 'collect').length;
-    const doneCount = data.orders.filter((o) => o.status === 'done').length;
 
     $('#badge-todo').textContent = todoCount;
     $('#badge-todo').style.display = todoCount > 0 ? 'flex' : 'none';
@@ -431,8 +435,9 @@
     $('#badge-publish').style.display = publishCount > 0 ? 'flex' : 'none';
     $('#badge-balance').textContent = collectCount;
     $('#badge-balance').style.display = collectCount > 0 ? 'flex' : 'none';
-    $('#badge-done').textContent = doneCount;
-    $('#badge-done').style.display = doneCount > 0 ? 'flex' : 'none';
+    /* 完成菜单不展示徽标数量 */
+    const badgeDone = $('#badge-done');
+    if (badgeDone) badgeDone.style.display = 'none';
   }
 
   /* ---------- 金额脱敏切换(眼睛) ---------- */
