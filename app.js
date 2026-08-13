@@ -944,10 +944,24 @@
 
   init();
 
-  /* ---------- PWA:注册 Service Worker ---------- */
+  /* ---------- PWA:注册 Service Worker + 主动检查更新 ---------- */
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => { /* 离线环境忽略 */ });
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        /* 云端更新后:立即检查 SW 更新,新 SW 激活后刷新页面拿到最新版 */
+        reg.update().catch(() => {});
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                /* 新版本已激活,刷新应用 */
+                window.location.reload();
+              }
+            });
+          }
+        });
+      }).catch(() => { /* 离线环境忽略 */ });
     });
   }
 })();

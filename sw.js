@@ -1,8 +1,8 @@
 /* ============================================================
    三火工作台 - Service Worker
-   静态资源缓存策略:Cache First + 网络回退
+   静态资源缓存策略:Network First(网络优先) + 离线回退缓存
    ============================================================ */
-const CACHE_NAME = 'sanhuo-workbench-v7';
+const CACHE_NAME = 'sanhuo-workbench-v8';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -35,23 +35,22 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-/* 请求:缓存优先,网络回退并更新缓存 */
+/* 请求:网络优先,离线回退缓存
+   —— 云端更新后,已安装的 PWA 下次打开即可同步到最新版 */
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const fetchPromise = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200 && (res.type === 'basic' || res.type === 'default')) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(req)
+      .then((res) => {
+        /* 成功响应:回写缓存,供离线使用 */
+        if (res && res.status === 200 && (res.type === 'basic' || res.type === 'default')) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req)) /* 离线:回退缓存 */
   );
 });
