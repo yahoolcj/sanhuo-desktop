@@ -288,14 +288,33 @@
     );
   }
 
-  function renderOrderList(listEl, orders, mode) {
+  function renderOrderList(listEl, orders, mode, sortKey) {
     if (orders.length === 0) {
       listEl.innerHTML = '<div class="empty-tip">这里还没有商单</div>';
       return;
     }
-    /* 按添加时间倒序(新添加的排前面) */
-    const sorted = orders.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const sorted = sortOrders(orders, sortKey);
     listEl.innerHTML = sorted.map((o) => renderOrderCard(o, mode || 'full')).join('');
+  }
+
+  /* 排序:created 创建时间倒序(默认) | date 需求时间倒序 | req 子需求未完成数倒序 */
+  function sortOrders(orders, sortKey) {
+    const arr = orders.slice();
+    if (sortKey === 'date') {
+      /* 需求时间倒序,无日期的排最后 */
+      return arr.sort((a, b) => {
+        const da = a.date ? new Date(a.date).getTime() : -Infinity;
+        const db = b.date ? new Date(b.date).getTime() : -Infinity;
+        return db - da;
+      });
+    }
+    if (sortKey === 'req') {
+      /* 子需求未完成数倒序,多的排前面 */
+      const pendingCount = (o) => normReqs(o.requirements).filter((r) => !r.done).length;
+      return arr.sort((a, b) => pendingCount(b) - pendingCount(a));
+    }
+    /* 默认:按添加时间倒序(新添加的排前面) */
+    return arr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }
 
   /* 下一阶段状态 */
@@ -355,6 +374,8 @@
   }
 
   /* ---------- 我的视图(全部 + 状态筛选 + 年月, 完整操作) ---------- */
+  let mineSort = 'created'; /* 我的页排序:created 创建时间 | date 需求时间 | req 子需求未完成 */
+
   function renderMine() {
     const byStatus = mineFilter === 'all'
       ? data.orders.slice()
@@ -362,7 +383,7 @@
     const filtered = filterByMonth(byStatus);
     $('#mine-total-chip').textContent = '共 ' + data.orders.length + ' 单';
     $('#mine-desc').textContent = '全部商单一共有 ' + data.orders.length + ' 个,点击可编辑';
-    renderOrderList($('#mine-order-list'), filtered, 'full');
+    renderOrderList($('#mine-order-list'), filtered, 'full', mineSort);
   }
 
   /* 我的页状态筛选:下拉选择器 */
@@ -370,6 +391,25 @@
     mineFilter = e.target.value;
     renderMine();
   });
+
+  /* 我的页排序:图标切换菜单 */
+  const mineSortToggle = $('#mine-sort-toggle');
+  const mineSortMenu = $('#mine-sort-menu');
+  if (mineSortToggle && mineSortMenu) {
+    mineSortToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mineSortMenu.hidden = !mineSortMenu.hidden;
+    });
+    mineSortMenu.addEventListener('click', (e) => {
+      const opt = e.target.closest('.sort-option');
+      if (!opt) return;
+      mineSort = opt.dataset.sort;
+      mineSortMenu.querySelectorAll('.sort-option').forEach((b) => b.classList.toggle('active', b === opt));
+      mineSortMenu.hidden = true;
+      renderMine();
+    });
+    document.addEventListener('click', () => { mineSortMenu.hidden = true; });
+  }
 
   /* ---------- 首页预览与统计 ---------- */
   function renderHomePreview() {

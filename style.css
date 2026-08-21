@@ -332,6 +332,41 @@ html, body {
 /* ---------- 待办页 ---------- */
 .page-head { display: flex; justify-content: space-between; align-items: center; }
 .page-head h2 { font-size: 24px; color: var(--ink-green); font-weight: 700; }
+.head-actions { display: inline-flex; align-items: center; gap: 8px; }
+/* 排序切换按钮 */
+.sort-toggle {
+  width: 34px; height: 34px;
+  border: none; border-radius: 50%;
+  background: var(--bg-green);
+  color: var(--mid-green);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sort-toggle:active { background: #E2EFE4; }
+.sort-toggle svg { width: 17px; height: 17px; }
+/* 排序模式菜单 */
+.sort-menu {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(74, 112, 82, 0.14);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sort-menu[hidden] { display: none; }
+.sort-option {
+  border: none; background: transparent;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px; font-weight: 500;
+  color: var(--gray-green);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sort-option:active { background: var(--bg-green); }
+.sort-option.active { background: var(--bg-green); color: var(--mid-green); font-weight: 700; }
 
 .add-row { display: flex; align-items: center; gap: 8px; }
 /* 添加待办的时间与分类行 */
@@ -708,14 +743,14 @@ html, body {
 
 /* 新增商单 FAB */
 .fab {
-  position: absolute; right: 18px; bottom: 24px;
+  position: fixed; right: 22px; bottom: 26px;
   width: 56px; height: 56px;
   border: none; border-radius: 50%;
   background: var(--grad-green);
   box-shadow: 0 8px 20px rgba(77, 140, 107, 0.35);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  z-index: 5;
+  z-index: 20;
   transition: transform 0.15s;
 }
 .fab:active { transform: scale(0.9); }

@@ -200,9 +200,21 @@
       <section class="view" id="view-mine">
         <div class="page-head">
           <h2>我的商单</h2>
-          <span class="chip chip-green" id="mine-total-chip">共 0 单</span>
+          <span class="head-actions">
+            <span class="chip chip-green" id="mine-total-chip">共 0 单</span>
+            <span class="sort-toggle" id="mine-sort-toggle" aria-label="排序方式">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </span>
         </div>
         <p class="page-desc" id="mine-desc">全部商单一共有 0 个,点击可编辑</p>
+
+        <!-- 排序模式菜单 -->
+        <div class="sort-menu" id="mine-sort-menu" hidden>
+          <button class="sort-option active" data-sort="created">默认 · 按创建时间</button>
+          <button class="sort-option" data-sort="date">需求时间</button>
+          <button class="sort-option" data-sort="req">子需求未完成</button>
+        </div>
 
         <div class="month-filter" data-mf="mine">
           <button class="mf-btn" data-mf-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
