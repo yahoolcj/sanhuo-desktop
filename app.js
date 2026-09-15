@@ -100,7 +100,7 @@
   }
 
   /* ---------- 导航 ---------- */
-  const views = ['home', 'mine', 'todo', 'publish', 'balance', 'done'];
+  const views = ['home', 'mine', 'templates', 'todo', 'publish', 'balance', 'done'];
   let mineFilter = 'all'; /* 我的页状态筛选 */
 
   function switchView(name) {
@@ -115,6 +115,7 @@
     if (name === 'publish') renderPublishView();
     if (name === 'balance') renderBalanceView();
     if (name === 'done') renderDoneView();
+    if (name === 'templates') renderTemplateView();
   }
 
   document.querySelectorAll('.nav-item').forEach((btn) => {
@@ -131,6 +132,90 @@
       }
       switchView(btn.dataset.goto);
     });
+  });
+
+  /* ---------- 修图灵感:内置提示词模板 ---------- */
+  const TEMPLATE_CATEGORIES = [
+    { id: 'all', label: '全部' },
+    { id: 'portrait', label: '人物写真' },
+    { id: 'food', label: '食物' },
+    { id: 'scene', label: '场景' },
+    { id: 'poster', label: '海报' }
+  ];
+  const PROMPT_TEMPLATES = [
+    { category: 'portrait', title: '窗边森系写真', tag: '自然氛围', cover: 'portrait-morning', prompt: '保留人物五官、发型与服装特征，营造清晨窗边的森系写真。柔和自然侧光，奶油白与鼠尾草绿配色，背景虚化的植物与纱帘，胶片颗粒质感，干净通透，半身构图，人物皮肤自然细腻，不改变人物身份。' },
+    { category: 'portrait', title: '夜晚闪光灯街拍', tag: '复古潮流', cover: 'portrait-night', prompt: '保留人物五官、发型与服装特征，转换为夜晚街头闪光灯写真。直闪光，高对比但肤色自然，暗色城市背景与轻微运动模糊，Y2K 数码相机质感，随性抓拍构图，画面有故事感，不改变人物身份。' },
+    { category: 'food', title: '奶油感甜品特写', tag: '探店出片', cover: 'food-cream', prompt: '保留食物原本形态、颜色和摆盘，制作高级甜品静物特写。暖白自然窗光，奶油色桌面，浅景深，细腻食物纹理与诱人光泽，低饱和日系杂志风，俯拍加局部特写，背景简洁干净，无多余餐具。' },
+    { category: 'food', title: '烟火感热菜大片', tag: '食欲拉满', cover: 'food-warm', prompt: '保留菜品原本形态与核心食材，强化刚出锅的烟火气。暖调侧逆光，深色木质桌面，食物冒着轻微热气，酱汁光泽真实，近景低机位美食摄影，背景有朦胧餐厅灯光，色彩浓郁但不过度饱和。' },
+    { category: 'scene', title: '治愈系咖啡角落', tag: '空间氛围', cover: 'scene-cafe', prompt: '保留店铺原有布局和招牌元素，营造治愈系咖啡馆空间。午后斜射阳光，木质桌椅与绿植，奶油暖调，干净通透，轻微胶片颗粒，纵向构图，视觉焦点落在最有特色的座位或咖啡器具上。' },
+    { category: 'scene', title: '雨夜城市氛围', tag: '电影感', cover: 'scene-rain', prompt: '保留原始场景的建筑与主体，转换为雨后夜晚的电影感街景。地面有真实倒影，蓝紫色环境光与暖黄色店铺灯光对比，空气微湿，远处散景，35mm 胶片质感，画面干净克制，避免过度霓虹。' },
+    { category: 'poster', title: '新品上新海报', tag: '品牌感', cover: 'poster-fresh', prompt: '以原图中的产品为视觉主角，制作清新感新品上新海报。背景使用柔和的品牌色渐变与留白，产品边缘干净，搭配自然投影和少量花朵或水果点缀，竖版构图，画面上方预留标题区域，不生成文字和水印。' },
+    { category: 'poster', title: '活动主视觉海报', tag: '吸睛促销', cover: 'poster-pop', prompt: '以原图主体为中心，制作有层次的活动主视觉海报。明快撞色，纸张拼贴与手写涂鸦元素，主体清晰突出，画面动感但不杂乱，竖版构图，四周预留添加活动文案的位置，不生成文字、logo 或水印。' }
+  ];
+  let templateFilter = 'all';
+
+  function renderTemplateView() {
+    const filters = $('#template-filters');
+    const list = $('#template-list');
+    if (!filters || !list) return;
+    filters.innerHTML = TEMPLATE_CATEGORIES.map((c) =>
+      '<button class="template-filter' + (c.id === templateFilter ? ' active' : '') + '" data-template-cat="' + c.id + '">' + esc(c.label) + '</button>'
+    ).join('');
+    const templates = templateFilter === 'all' ? PROMPT_TEMPLATES : PROMPT_TEMPLATES.filter((t) => t.category === templateFilter);
+    list.innerHTML = templates.map((t) => {
+      const category = TEMPLATE_CATEGORIES.find((c) => c.id === t.category);
+      const templateIndex = PROMPT_TEMPLATES.indexOf(t);
+      return '<article class="template-card">' +
+        '<div class="template-cover ' + t.cover + '"><span class="cover-orb orb-one"></span><span class="cover-orb orb-two"></span><span class="cover-subject"></span><span class="cover-label">视觉参考</span></div>' +
+        '<div class="template-card-body"><div class="template-card-head"><div><span class="template-type">' + esc(category.label) + '</span><h3>' + esc(t.title) + '</h3></div><span class="template-tag">' + esc(t.tag) + '</span></div>' +
+        '<p class="template-prompt">' + esc(t.prompt) + '</p>' +
+        '<button class="template-copy" data-template-act="copy" data-template-index="' + templateIndex + '"><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>复制提示词</button></div></article>';
+    }).join('');
+  }
+
+  function fallbackCopy(text) {
+    const input = document.createElement('textarea');
+    input.value = text;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (e) { /* 不支持时提示长按复制 */ }
+    document.body.removeChild(input);
+    return copied;
+  }
+
+  function copyTemplatePrompt(text, button) {
+    let finished = false;
+    const finish = (copied) => {
+      if (finished) return;
+      finished = true;
+      const original = button.innerHTML;
+      button.textContent = copied ? '已复制,去修图吧' : '未能复制,请长按提示词';
+      button.classList.toggle('copied', copied);
+      setTimeout(() => { button.innerHTML = original; button.classList.remove('copied'); }, 1600);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => finish(true)).catch(() => finish(fallbackCopy(text)));
+      setTimeout(() => finish(fallbackCopy(text)), 700);
+    } else {
+      finish(fallbackCopy(text));
+    }
+  }
+
+  $('#template-filters').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-template-cat]');
+    if (!button) return;
+    templateFilter = button.dataset.templateCat;
+    renderTemplateView();
+  });
+  $('#template-list').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-template-act="copy"]');
+    if (!button) return;
+    const template = PROMPT_TEMPLATES[Number(button.dataset.templateIndex)];
+    if (template) copyTemplatePrompt(template.prompt, button);
   });
 
   /* ---------- 首页欢迎语 ---------- */
@@ -969,6 +1054,7 @@
     renderBalanceView();
     renderDoneView();
     renderMine();
+    renderTemplateView();
     renderReminder();
     renderBadges();
   }
