@@ -27,12 +27,6 @@
           </span>
           <span>我的</span>
         </button>
-        <button class="nav-item" data-view="templates">
-          <span class="nav-icon-wrap">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5c1.9 3.1 4.7 4.8 7.2 5.7-.5 3.6-2.8 8.4-7.2 11.3-4.4-2.9-6.7-7.7-7.2-11.3C7.3 8.3 10.1 6.6 12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 7.3v8.5M8.7 11.2h6.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </span>
-          <span>灵感</span>
-        </button>
         <button class="nav-item" data-view="todo">
           <span class="nav-icon-wrap">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="3.5" width="16" height="17" rx="3.5" stroke="currentColor" stroke-width="2"/><path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -60,6 +54,12 @@
             <span class="badge" id="badge-done">0</span>
           </span>
           <span>完成</span>
+        </button>
+        <button class="nav-item" data-view="templates">
+          <span class="nav-icon-wrap">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5c1.9 3.1 4.7 4.8 7.2 5.7-.5 3.6-2.8 8.4-7.2 11.3-4.4-2.9-6.7-7.7-7.2-11.3C7.3 8.3 10.1 6.6 12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 7.3v8.5M8.7 11.2h6.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <span>灵感</span>
         </button>
       </nav>
       <button class="eye-toggle masked" id="money-eye" aria-label="切换金额显示" title="切换金额显示">
@@ -102,8 +102,24 @@
           </button>
         </div>
 
-        <!-- 待办状态商单预览 -->
-        <div class="card todo-preview">
+        <!-- 日历待办卡片 -->
+        <section class="card calendar-todo-card" id="home-calendar-card" aria-labelledby="calendar-todo-title">
+          <div class="card-head">
+            <span class="card-title" id="calendar-todo-title"><svg class="c-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2"/><path d="M8 3.5v4M16 3.5v4M4 10h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>日历待办</span>
+          </div>
+          <div class="calendar-month-bar">
+            <button class="calendar-month-btn" type="button" data-calendar-act="prev" aria-label="上个月"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 6-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <p class="calendar-todo-month" id="home-calendar-month"></p>
+            <button class="calendar-month-btn" type="button" data-calendar-act="next" aria-label="下个月"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div class="calendar-days" id="home-calendar-days" aria-label="本月日历"></div>
+        </section>
+
+        <!-- 待办状态商单预览(暂时隐藏，保留渲染逻辑) -->
+        <div class="card todo-preview" hidden>
           <div class="card-head">
             <span class="card-title"><svg class="c-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="3.5" width="16" height="17" rx="3.5" stroke="#4A7C5F" stroke-width="2"/><path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4.5" stroke="#4A7C5F" stroke-width="2" stroke-linecap="round"/></svg>待办商单</span>
             <span class="chip chip-pink" id="home-todo-chip">0 单</span>
@@ -249,6 +265,7 @@
 
         <select class="status-select" id="mine-status-select" aria-label="状态筛选">
           <option value="all">全部状态</option>
+          <option value="unfinished">未完成</option>
           <option value="todo">待办</option>
           <option value="pending">待发布</option>
           <option value="collect">待结款</option>
@@ -337,6 +354,21 @@
       <div class="modal-actions">
         <button class="btn-plain" id="detail-close">取消</button>
         <button class="btn-primary" id="detail-save">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 日历当天未完成商单弹窗 -->
+  <div class="modal-mask" id="calendar-order-modal" hidden>
+    <div class="modal calendar-order-modal" role="dialog" aria-modal="true" aria-labelledby="calendar-order-title">
+      <div class="calendar-order-head">
+        <h3 id="calendar-order-title">当天待办</h3>
+        <button class="calendar-order-close" type="button" id="calendar-order-close" aria-label="关闭">×</button>
+      </div>
+      <div class="calendar-order-list" id="calendar-order-list"></div>
+      <div class="modal-actions">
+        <button class="btn-plain" type="button" id="calendar-order-cancel">关闭</button>
+        <button class="btn-primary" type="button" id="calendar-order-goto">去待办看看</button>
       </div>
     </div>
   </div>

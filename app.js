@@ -102,6 +102,10 @@
   /* ---------- 导航 ---------- */
   const views = ['home', 'mine', 'templates', 'todo', 'publish', 'balance', 'done'];
   let mineFilter = 'all'; /* 我的页状态筛选 */
+  const calendarView = (() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  })();
 
   function switchView(name) {
     views.forEach((v) => {
@@ -382,15 +386,17 @@
     listEl.innerHTML = sorted.map((o) => renderOrderCard(o, mode || 'full')).join('');
   }
 
-  /* 排序:created 创建时间倒序(默认) | date 需求时间倒序 | req 子需求未完成数倒序 */
+  /* 排序:created 创建时间倒序(默认) | date 需求时间正序 | req 子需求未完成数倒序 */
   function sortOrders(orders, sortKey) {
     const arr = orders.slice();
     if (sortKey === 'date') {
-      /* 需求时间倒序,无日期的排最后 */
+      /* 需求时间正序,无日期或非法日期的排最后 */
       return arr.sort((a, b) => {
-        const da = a.date ? new Date(a.date).getTime() : -Infinity;
-        const db = b.date ? new Date(b.date).getTime() : -Infinity;
-        return db - da;
+        const time = (o) => {
+          const value = o.date ? new Date(o.date).getTime() : NaN;
+          return isNaN(value) ? Infinity : value;
+        };
+        return time(a) - time(b);
       });
     }
     if (sortKey === 'req') {
@@ -464,10 +470,17 @@
   function renderMine() {
     const byStatus = mineFilter === 'all'
       ? data.orders.slice()
-      : data.orders.filter((o) => o.status === mineFilter);
+      : mineFilter === 'unfinished'
+        ? data.orders.filter((o) => o.status !== 'done')
+        : data.orders.filter((o) => o.status === mineFilter);
     const filtered = filterByMonth(byStatus);
-    $('#mine-total-chip').textContent = '共 ' + data.orders.length + ' 单';
-    $('#mine-desc').textContent = '全部商单一共有 ' + data.orders.length + ' 个,点击可编辑';
+    const filterLabel = mineFilter === 'all'
+      ? '全部商单'
+      : mineFilter === 'unfinished'
+        ? '未完成商单'
+        : (STATUS_META[mineFilter] || STATUS_META.todo).label + '商单';
+    $('#mine-total-chip').textContent = '共 ' + filtered.length + ' 单';
+    $('#mine-desc').textContent = filterLabel + '一共有 ' + filtered.length + ' 个,点击可编辑';
     renderOrderList($('#mine-order-list'), filtered, 'full', mineSort);
   }
 
@@ -497,6 +510,96 @@
   }
 
   /* ---------- 首页预览与统计 ---------- */
+  function dateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function shiftHomeCalendar(delta) {
+    const next = new Date(calendarView.year, calendarView.month + delta, 1);
+    calendarView.year = next.getFullYear();
+    calendarView.month = next.getMonth();
+    renderHomeCalendar();
+  }
+
+  function calendarUnfinishedOrders(date) {
+    return data.orders.filter((o) => {
+      if (!o.date || !STATUS_LIST.includes(o.status) || o.status === 'done') return false;
+      const orderDate = new Date(o.date);
+      return !isNaN(orderDate.getTime()) && dateKey(orderDate) === date;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
+  const calendarOrderModal = $('#calendar-order-modal');
+  const calendarOrderList = $('#calendar-order-list');
+
+  function openCalendarOrderModal(date) {
+    const orders = calendarUnfinishedOrders(date);
+    if (!orders.length) return;
+    const parts = date.split('-');
+    $('#calendar-order-title').textContent = Number(parts[1]) + '月' + Number(parts[2]) + '日待办';
+    calendarOrderList.innerHTML = orders.map((o) => {
+      const meta = STATUS_META[o.status] || STATUS_META.todo;
+      return '<article class="calendar-order-row">' +
+        '<div><b>' + esc(o.name) + '</b><span>' + esc(fmtDue(o.date, true)) + '</span></div>' +
+        '<span class="status ' + meta.cls + '">' + meta.label + '</span>' +
+      '</article>';
+    }).join('');
+    calendarOrderModal.hidden = false;
+  }
+
+  function renderHomeCalendar() {
+    const now = new Date();
+    const year = calendarView.year;
+    const month = calendarView.month;
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+    const monthLabel = $('#home-calendar-month');
+    const daysEl = $('#home-calendar-days');
+    const unfinishedByDate = {};
+
+    if (!monthLabel || !daysEl) return;
+    data.orders.forEach((o) => {
+      if (!o.date || !STATUS_LIST.includes(o.status) || o.status === 'done') return;
+      const orderDate = new Date(o.date);
+      if (isNaN(orderDate.getTime())) return;
+      const key = dateKey(orderDate);
+      unfinishedByDate[key] = (unfinishedByDate[key] || 0) + 1;
+    });
+    monthLabel.textContent = year + '年' + (month + 1) + '月';
+    daysEl.innerHTML = Array.from({ length: totalCells }, (_, index) => {
+      const day = index - firstWeekday + 1;
+      if (day < 1 || day > daysInMonth) {
+        return '<span class="calendar-day calendar-day-empty" aria-hidden="true"></span>';
+      }
+      const currentDate = new Date(year, month, day);
+      const count = unfinishedByDate[dateKey(currentDate)] || 0;
+      const isToday = year === now.getFullYear() && month === now.getMonth() && day === now.getDate();
+      const cls = 'calendar-day' + (isToday ? ' calendar-day-today' : '') + (count ? ' calendar-day-has-unfinished' : '');
+      const aria = (month + 1) + '月' + day + '日' + (count ? '，' + count + ' 个未完成商单' : '，没有未完成商单');
+      if (!count) return '<span class="' + cls + '" aria-label="' + aria + '"><span>' + day + '</span></span>';
+      return '<button class="' + cls + '" type="button" data-calendar-date="' + dateKey(currentDate) + '" aria-label="' + aria + '"><span>' + day + '</span><b class="calendar-day-count" aria-hidden="true"></b></button>';
+    }).join('');
+  }
+
+  $('#home-calendar-card').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-calendar-act]');
+    if (btn) {
+      shiftHomeCalendar(btn.dataset.calendarAct === 'prev' ? -1 : 1);
+      return;
+    }
+    const day = e.target.closest('[data-calendar-date]');
+    if (day) openCalendarOrderModal(day.dataset.calendarDate);
+  });
+
+  $('#calendar-order-close').addEventListener('click', () => { calendarOrderModal.hidden = true; });
+  $('#calendar-order-cancel').addEventListener('click', () => { calendarOrderModal.hidden = true; });
+  $('#calendar-order-goto').addEventListener('click', () => {
+    calendarOrderModal.hidden = true;
+    switchView('todo');
+  });
+  calendarOrderModal.addEventListener('click', (e) => { if (e.target === calendarOrderModal) calendarOrderModal.hidden = true; });
+
   function renderHomePreview() {
     const byStatus = {};
     STATUS_LIST.forEach((s) => { byStatus[s] = data.orders.filter((o) => o.status === s); });
@@ -1048,6 +1151,7 @@
   /* ---------- 全量刷新 ---------- */
   function refreshAll() {
     renderGreet();
+    renderHomeCalendar();
     renderHomePreview();
     renderTodoView();
     renderPublishView();

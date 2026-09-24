@@ -226,7 +226,7 @@ html, body {
 
 .view {
   display: none;
-  padding: 64px 18px 24px;
+  padding: 24px 18px 24px;
   flex-direction: column;
   gap: 18px;
   min-height: 100%;
@@ -304,6 +304,62 @@ html, body {
 .card-title { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--ink-green); }
 .card-title.light { color: #fff; }
 .c-icon { width: 20px; height: 20px; }
+
+/* 首页日历待办卡片 */
+.calendar-todo-card { gap: 12px; }
+.calendar-month-bar { display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; }
+.calendar-todo-month {
+  color: var(--ink-green);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+.calendar-month-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mid-green);
+  cursor: pointer;
+}
+.calendar-month-btn:active { background: var(--bg-green); }
+.calendar-month-btn svg { width: 16px; height: 16px; }
+.calendar-weekdays,
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  text-align: center;
+}
+.calendar-weekdays { color: var(--gray-green); font-size: 10px; font-weight: 600; }
+.calendar-days { row-gap: 6px; }
+.calendar-day {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border-radius: 50%;
+  color: var(--ink-green);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 26px;
+}
+.calendar-day:is(button) { border: none; background: transparent; font-family: inherit; cursor: pointer; }
+.calendar-day-empty { pointer-events: none; }
+.calendar-day-today { background: var(--bg-green); color: var(--green-deep); }
+.calendar-day-has-unfinished { color: var(--chip-orange); font-weight: 700; }
+.calendar-day-count {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--green-main);
+}
+.todo-preview[hidden] { display: none; }
 
 .chip {
   display: inline-flex; align-items: center;
@@ -838,6 +894,35 @@ html, body {
   box-shadow: 0 2px 8px rgba(74, 112, 82, 0.05);
   line-height: 1.6;
 }
+
+/* 日历待办列表弹窗 */
+.calendar-order-modal { width: 300px; gap: 14px; }
+.calendar-order-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.calendar-order-head h3 { text-align: left; flex: 1; }
+.calendar-order-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-green);
+  color: var(--mid-green);
+  font-size: 20px;
+  line-height: 28px;
+  cursor: pointer;
+}
+.calendar-order-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+.calendar-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--bg-green);
+}
+.calendar-order-row > div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.calendar-order-row b { overflow: hidden; color: var(--ink-green); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-order-row div span { color: var(--gray-green); font-size: 11px; }
 
 /* ---------- 修图灵感页 ---------- */
 .template-guide {
